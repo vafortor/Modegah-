@@ -2,7 +2,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from "../types";
 
-// Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION = `You are the Modegah AI Assistant, an expert in construction materials for Modegah Block Factory in Ghana. 
@@ -17,7 +16,8 @@ Product Range:
 
 IMPORTANT: Delivery is ONLY available within the Greater Accra Region. Outside this region, customers must arrange pickup from Afienyah/Shai Hills.
 
-Provide professional advice on quantities and material selection. Use GH₵ as the primary currency.`;
+Provide professional advice on quantities and material selection. Use GH₵ as the primary currency.
+Use the googleSearch tool to provide up-to-date information on cement prices (GHACEM, Dangote) and construction trends in Ghana if the user asks.`;
 
 export const getGeminiResponse = async (history: ChatMessage[]) => {
   try {
@@ -26,18 +26,29 @@ export const getGeminiResponse = async (history: ChatMessage[]) => {
       parts: [{ text: msg.content }]
     }));
 
-    // Must use ai.models.generateContent to query GenAI with both the model name and prompt.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7,
+        tools: [{ googleSearch: {} }]
       },
     });
 
-    // The text property (not a method) directly returns the string output.
-    return response.text || "I'm sorry, I couldn't process that request.";
+    const text = response.text;
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    
+    // If search was used, append sources
+    let sources = "";
+    if (groundingChunks && groundingChunks.length > 0) {
+      sources = "\n\n**Sources:**\n" + groundingChunks
+        .filter(chunk => chunk.web)
+        .map(chunk => `- [${chunk.web?.title}](${chunk.web?.uri})`)
+        .join("\n");
+    }
+
+    return (text + sources) || "I'm sorry, I couldn't process that request.";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "The AI consultant is currently unavailable. Please try again later.";

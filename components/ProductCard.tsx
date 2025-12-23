@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Product } from '../types';
-import { Plus, Info, Star } from 'lucide-react';
+import { Plus, Info, Star, CheckCircle } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +11,8 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onShowDetails, formatPrice }) => {
+  const isPartner = !product.factoryName.toLowerCase().includes('modegah');
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 group transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full">
       <div className="relative h-48 overflow-hidden bg-slate-200">
@@ -19,10 +21,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onShowD
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
           <span className="bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
             {product.category}
           </span>
+          {isPartner && (
+            <span className="bg-amber-500 text-slate-900 text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+              <CheckCircle size={10} /> PARTNER
+            </span>
+          )}
         </div>
       </div>
       
@@ -41,9 +48,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onShowD
           <span className="text-[10px] font-bold text-slate-400">({product.reviewCount})</span>
         </div>
 
-        <h3 className="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-amber-600 transition-colors">
+        <h3 className="font-bold text-slate-800 text-lg leading-tight mb-1 group-hover:text-amber-600 transition-colors">
           {product.name}
         </h3>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-1">
+          <CheckCircle size={12} className="text-amber-500" /> {product.factoryName}
+        </p>
         <p className="text-slate-500 text-sm line-clamp-2 mb-4">
           {product.description}
         </p>

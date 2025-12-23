@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Minus, Plus, ShoppingBag, Trash2, Truck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Trash2, Truck, AlertCircle, CheckCircle2, MapPin, Award } from 'lucide-react';
 import { CartItem } from '../types';
 
 interface CartProps {
@@ -11,12 +11,16 @@ interface CartProps {
   onRemoveItem: (id: string) => void;
   onCheckout: () => void;
   formatPrice: (price: number) => string;
+  discountPercentage: number;
 }
 
-const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout, formatPrice }) => {
+const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout, formatPrice, discountPercentage }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [policyAcknowledged, setPolicyAcknowledged] = useState(false);
+  
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discountAmount = subtotal * discountPercentage;
+  const total = subtotal - discountAmount;
   
   // Reset states when cart closes
   useEffect(() => {
@@ -56,6 +60,27 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Persistent Delivery Alert Banner */}
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 shadow-sm">
+            <MapPin className="text-amber-600 shrink-0 mt-0.5" size={20} />
+            <div>
+              <h4 className="text-[11px] font-black text-amber-900 uppercase tracking-widest mb-1">REGIONAL RESTRICTION</h4>
+              <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
+                Modegah Logistics serves the <span className="font-bold underline">Greater Accra Region</span> exclusively. Verify your site location before proceeding.
+              </p>
+            </div>
+          </div>
+
+          {discountPercentage > 0 && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3">
+              <Award className="text-green-600" size={20} />
+              <div>
+                <p className="text-[10px] font-bold text-green-600 uppercase">Loyalty Perk</p>
+                <p className="text-xs font-bold text-green-900">{(discountPercentage * 100).toFixed(0)}% Loyalty Discount will be applied.</p>
+              </div>
+            </div>
+          )}
+
           {items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
               <ShoppingBag size={64} className="mb-4 text-slate-300" />
@@ -121,7 +146,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                 <div>
                   <h4 className={`text-sm font-bold ${policyAcknowledged ? 'text-green-800' : 'text-amber-900'}`}>Delivery Limitation</h4>
                   <p className={`text-xs mt-1 leading-relaxed ${policyAcknowledged ? 'text-green-700' : 'text-amber-800'}`}>
-                    Modegah delivers exclusively within the <strong>Greater Accra Region</strong>. Customers outside this area must arrange their own transport from our Shai Hills factory.
+                    Modegah delivers exclusively within the <strong>Greater Accra Region</strong>.
                   </p>
                 </div>
               </div>
@@ -144,19 +169,30 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                   </div>
                 </div>
                 <span className={`text-xs font-bold ${policyAcknowledged ? 'text-green-700' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                  I confirm my site is in Greater Accra or I will arrange pickup.
+                  I confirm my site is in Greater Accra.
                 </span>
               </label>
             </div>
             
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500 font-medium">Subtotal</span>
-              <span className="text-2xl font-bebas text-slate-900 tracking-wide">{formatPrice(subtotal)}</span>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Subtotal</span>
+                <span className="font-bold text-slate-600">{formatPrice(subtotal)}</span>
+              </div>
+              {discountPercentage > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-600">
+                  <span className="font-medium">Loyalty Reward ({(discountPercentage * 100).toFixed(0)}%)</span>
+                  <span className="font-bold">-{formatPrice(discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Total Pay</span>
+                <span className="text-3xl font-bebas text-slate-900 tracking-wide">{formatPrice(total)}</span>
+              </div>
             </div>
 
             {!showConfirm ? (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <p className="text-[10px] text-slate-400">Final total excludes specific site offloading surcharges if applicable.</p>
                 <button 
                   onClick={handleCheckoutClick}
                   disabled={!policyAcknowledged}

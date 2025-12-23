@@ -1,6 +1,10 @@
 
 export type Currency = 'GHS' | 'USD';
 
+export type SortOption = 'default' | 'price-low' | 'price-high' | 'rating';
+
+export type UserRole = 'CLIENT' | 'PARTNER';
+
 export interface Review {
   id: string;
   productId: string;
@@ -13,12 +17,13 @@ export interface Review {
 export interface Product {
   id: string;
   name: string;
-  category: 'Hollow' | 'Solid' | 'Paving' | 'Decorative';
+  category: 'Hollow' | 'Solid' | 'Paving' | 'Decorative' | 'Cement';
   price: number; // Base price in GHS
   description: string;
   image: string;
   averageRating: number;
   reviewCount: number;
+  factoryName: string;
   specifications: {
     dimensions: string;
     weight: string;
@@ -32,12 +37,16 @@ export interface CartItem extends Product {
 
 export interface Order {
   id: string;
+  transactionId: string;
   date: string;
   items: CartItem[];
+  subtotalGHS: number;
+  discountAppliedGHS: number;
   totalGHS: number;
   status: 'Processing' | 'In Production' | 'Out for Delivery' | 'Delivered';
   currencyAtTime: Currency;
   exchangeRateAtTime: number;
+  paymentMethod: 'Mobile Money' | 'Bank Transfer';
 }
 
 export interface ChatMessage {
@@ -49,5 +58,19 @@ export enum View {
   HOME = 'home',
   SHOP = 'shop',
   CALCULATOR = 'calculator',
-  ORDERS = 'orders'
+  ORDERS = 'orders',
+  PARTNER = 'partner',
+  PARTNER_DASHBOARD = 'partner_dashboard',
+  PRIVACY = 'privacy',
+  TERMS = 'terms'
+}
+
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: number;
 }
