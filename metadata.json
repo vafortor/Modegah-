@@ -1,0 +1,7 @@
+{
+  "name": "Modegah Block Factory",
+  "description": "Premium construction block e-commerce platform featuring a smart block calculator and AI construction assistant.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
