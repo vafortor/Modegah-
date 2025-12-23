@@ -127,7 +127,8 @@ const Header: React.FC<HeaderProps> = ({
 
           {userRole === 'PARTNER' && (
             <button 
-              className="p-2 text-slate-300 hover:text-amber-500 transition-colors hidden sm:block"
+              onClick={() => setView(View.PARTNER_SETTINGS)}
+              className={`p-2 transition-colors hidden sm:block ${currentView === View.PARTNER_SETTINGS ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}
               title="Factory Settings"
             >
               <Settings size={20} />
@@ -246,9 +247,10 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               ) : (
                 <button 
-                  className="w-full flex items-center justify-center gap-3 bg-slate-800 text-white py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700 transition-all"
+                  onClick={() => handleNavClick(View.PARTNER_SETTINGS)}
+                  className={`w-full flex items-center justify-center gap-3 bg-slate-800 text-white py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700 transition-all ${currentView === View.PARTNER_SETTINGS ? 'bg-amber-500 text-slate-900' : ''}`}
                 >
-                  <Settings size={18} className="text-amber-500" />
+                  <Settings size={18} className={currentView === View.PARTNER_SETTINGS ? 'text-slate-900' : 'text-amber-500'} />
                   Portal Settings
                 </button>
               )}

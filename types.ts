@@ -61,6 +61,7 @@ export enum View {
   ORDERS = 'orders',
   PARTNER = 'partner',
   PARTNER_DASHBOARD = 'partner_dashboard',
+  PARTNER_SETTINGS = 'partner_settings',
   PRIVACY = 'privacy',
   TERMS = 'terms'
 }

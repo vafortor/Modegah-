@@ -10,6 +10,7 @@ import BlockCalculator from './components/BlockCalculator';
 import AIConsultant from './components/AIConsultant';
 import PartnerPortal from './components/PartnerPortal';
 import PartnerDashboard from './components/PartnerDashboard';
+import PartnerSettings from './components/PartnerSettings';
 import Login from './components/Login';
 import LegalView from './components/LegalView';
 import ReceiptModal from './components/ReceiptModal';
@@ -41,7 +42,7 @@ const App: React.FC = () => {
   // Security Redirection
   useEffect(() => {
     if (isAuthenticated && userRole === 'PARTNER') {
-      const allowedViews = [View.PARTNER_DASHBOARD, View.SHOP, View.HOME];
+      const allowedViews = [View.PARTNER_DASHBOARD, View.SHOP, View.HOME, View.PARTNER_SETTINGS];
       if (!allowedViews.includes(currentView)) {
         setView(View.PARTNER_DASHBOARD);
       }
@@ -517,6 +518,10 @@ const App: React.FC = () => {
 
         {userRole === 'PARTNER' && currentView === View.PARTNER_DASHBOARD && (
           <PartnerDashboard />
+        )}
+
+        {userRole === 'PARTNER' && currentView === View.PARTNER_SETTINGS && (
+          <PartnerSettings addNotification={addNotification} />
         )}
 
         {currentView === View.PRIVACY && (
