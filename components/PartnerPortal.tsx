@@ -148,15 +148,6 @@ const PartnerPortal: React.FC<PartnerPortalProps> = ({ setView }) => {
             Enter Partner Dashboard
           </button>
         </div>
-        
-        <div className="mt-8 text-center">
-           <button 
-            onClick={() => setView(View.PARTNER)}
-            className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors flex items-center justify-center gap-2 mx-auto uppercase tracking-widest"
-          >
-            Or start a new application <ChevronRight size={14} />
-          </button>
-        </div>
       </div>
     );
   }

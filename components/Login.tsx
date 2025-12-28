@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert } from 'lucide-react';
+import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap } from 'lucide-react';
 import { UserRole } from '../types';
 import BlockIcon from './BlockIcon';
 
@@ -29,6 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     // Simulated Authentication Logic
     setTimeout(() => {
       const genericError = "Invalid credentials";
+      const lowerUser = username.toLowerCase();
 
       if (isSignUp) {
         if (!fullName || !phone || !username || !password) {
@@ -39,8 +40,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setIsSuccess(true);
         setTimeout(() => onLogin('CLIENT'), 1500);
       } else {
-        const lowerUser = username.toLowerCase();
-        
         if (activeTab === 'ADMIN') {
           if (lowerUser === 'admin' && password === 'modegah_admin') {
             onLogin('ADMIN');
@@ -60,7 +59,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           if (lowerUser === 'client' && password === 'modegah_client') {
             onLogin('CLIENT');
           } else if (lowerUser === 'admin' || lowerUser === 'partner') {
-             // Block specific user types from the wrong portal
              setError(genericError);
              setIsLoading(false);
           } else {
@@ -70,6 +68,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
       }
     }, 1200);
+  };
+
+  const handleQuickLogin = (role: UserRole) => {
+    setIsLoading(true);
+    setActiveTab(role);
+    setIsSignUp(false);
+    
+    // Pre-fill demo credentials
+    if (role === 'ADMIN') {
+      setUsername('admin');
+      setPassword('modegah_admin');
+    } else if (role === 'PARTNER') {
+      setUsername('partner');
+      setPassword('modegah_partner');
+    } else {
+      setUsername('client');
+      setPassword('modegah_client');
+    }
+
+    setTimeout(() => {
+      onLogin(role);
+    }, 800);
   };
 
   return (
@@ -234,6 +254,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   )}
                 </button>
               </form>
+
+              {!isSignUp && !isLoading && (
+                <div className="mt-8 pt-6 border-t border-white/5">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center mb-4">Quick Demo Access</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button 
+                      onClick={() => handleQuickLogin('CLIENT')}
+                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group"
+                    >
+                      <User size={14} className="group-hover:text-amber-500" />
+                      <span className="text-[8px] font-bold uppercase tracking-tighter">Client</span>
+                    </button>
+                    <button 
+                      onClick={() => handleQuickLogin('PARTNER')}
+                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group"
+                    >
+                      <Factory size={14} className="group-hover:text-amber-500" />
+                      <span className="text-[8px] font-bold uppercase tracking-tighter">Partner</span>
+                    </button>
+                    <button 
+                      onClick={() => handleQuickLogin('ADMIN')}
+                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group border border-white/5"
+                    >
+                      <ShieldAlert size={14} className="group-hover:text-red-500" />
+                      <span className="text-[8px] font-bold uppercase tracking-tighter">Admin</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -5,6 +5,22 @@ export type SortOption = 'default' | 'price-low' | 'price-high' | 'rating';
 
 export type UserRole = 'CLIENT' | 'PARTNER' | 'ADMIN';
 
+export type PartnerStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface Partner {
+  id: string;
+  name: string;
+  location: string;
+  contact: string;
+  status: PartnerStatus;
+  tier: 'standard' | 'premium' | 'enterprise';
+  appliedDate: string;
+  subscriptionFee: number;
+  revenueGenerated: number;
+  activeFleetCount: number;
+  productionCapacity: number; // units per day
+}
+
 export interface Review {
   id: string;
   productId: string;
@@ -17,7 +33,7 @@ export interface Review {
 export interface Product {
   id: string;
   name: string;
-  category: 'Hollow' | 'Solid' | 'Paving' | 'Decorative' | 'Cement';
+  category: 'Hollow' | 'Solid' | 'Paving' | 'Decorative' | 'Cement' | 'Interlocking' | 'U-Block';
   price: number; // Base price in GHS
   description: string;
   image: string;
@@ -29,6 +45,7 @@ export interface Product {
     weight: string;
     strength: string;
   };
+  isActive: boolean; // For admin to toggle availability
 }
 
 export interface CartItem extends Product {
@@ -47,6 +64,12 @@ export interface Order {
   currencyAtTime: Currency;
   exchangeRateAtTime: number;
   paymentMethod: 'Mobile Money' | 'Bank Transfer';
+  trackingDetails?: {
+    currentLocation: string;
+    estimatedArrival: string;
+    driverName: string;
+    driverPhone: string;
+  };
 }
 
 export interface ChatMessage {

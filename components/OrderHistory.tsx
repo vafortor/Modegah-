@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Order } from '../types';
-import { Package, Calendar, Clock, CheckCircle2, Truck, ChevronRight, ShoppingBag, Info, FileText } from 'lucide-react';
+// Added Award icon to imports
+import { Package, Calendar, Clock, CheckCircle2, Truck, ChevronRight, ShoppingBag, Info, FileText, MapPin, Phone, User, Award } from 'lucide-react';
 
 interface OrderHistoryProps {
   orders: Order[];
@@ -46,64 +47,114 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, formatPrice, onView
       {orders.map((order) => (
         <div 
           key={order.id} 
-          className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
+          className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all group"
         >
           <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
-              <div className="bg-slate-900 p-2.5 rounded-xl text-amber-500">
-                <Package size={20} />
+              <div className="bg-slate-900 p-3 rounded-2xl text-amber-500">
+                <Package size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">{order.id}</h3>
-                <p className="text-xs text-slate-500 font-medium">{order.date} • {order.items.length} Product Types</p>
+                <h3 className="font-extrabold text-slate-900 text-lg">{order.id}</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{order.date} • {order.items.length} Product Types</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
+              <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-tighter border-2 ${getStatusColor(order.status)}`}>
                 {getStatusIcon(order.status)}
                 {order.status}
               </div>
-              <div className="text-xl font-bebas tracking-wide text-slate-900">
+              <div className="text-2xl font-bebas tracking-wide text-slate-900">
                 {formatPrice(order.totalGHS)}
               </div>
             </div>
           </div>
 
-          <div className="p-6">
-            <div className="space-y-4 mb-6">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          <div className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Order Breakdown</h4>
+                <div className="space-y-3">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white overflow-hidden flex-shrink-0 border border-slate-100">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-800">{item.name} <span className="text-slate-400 font-medium">× {item.quantity}</span></span>
+                      </div>
+                      <span className="text-sm font-black text-slate-900">{formatPrice(item.price * item.quantity)}</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-700">{item.name} <span className="text-slate-400 font-normal">× {item.quantity}</span></span>
-                  </div>
-                  <span className="text-sm font-bold text-slate-500">{formatPrice(item.price * item.quantity)}</span>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {order.trackingDetails && (
+                <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden">
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-6">
+                      <Truck className="text-amber-500" size={20} />
+                      <h4 className="text-xs font-bold uppercase tracking-widest">Live Delivery Tracking</h4>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="flex gap-4">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <MapPin size={20} className="text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Location</p>
+                          <p className="text-sm font-bold">{order.trackingDetails.currentLocation}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <User size={20} className="text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assigned Driver</p>
+                          <p className="text-sm font-bold">{order.trackingDetails.driverName}</p>
+                          <p className="text-[10px] text-slate-500 font-bold">{order.trackingDetails.driverPhone}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Estimate Arrival</p>
+                          <p className="text-lg font-bebas tracking-wide text-amber-500 mt-1">{order.trackingDetails.estimatedArrival}</p>
+                        </div>
+                        <button className="bg-amber-500 text-slate-900 p-2 rounded-xl">
+                          <Phone size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-10 -right-10 opacity-5">
+                    <Truck size={200} />
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-8 mt-8 border-t border-slate-100 gap-4">
+              <div className="flex gap-4 w-full sm:w-auto">
                 <button 
                   onClick={() => onViewReceipt(order)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold transition-all hover:bg-slate-800"
                 >
-                  <FileText size={16} className="text-amber-600" />
-                  View Receipt
+                  <FileText size={16} className="text-amber-500" />
+                  Official Receipt
                 </button>
-                <button 
-                  className="text-slate-400 hover:text-amber-600 flex items-center gap-1 text-xs font-bold uppercase tracking-wider transition-colors"
-                  onClick={() => alert(`Tracking details for ${order.id}:\nCurrent Status: ${order.status}\nLocation: Shai Hills Factory Yard`)}
-                >
-                  Track Shipment <ChevronRight size={14} />
+                <button className="flex-1 sm:flex-none px-6 py-3 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-100">
+                  Help / Support
                 </button>
               </div>
               {order.discountAppliedGHS > 0 && (
-                <div className="text-[10px] font-bold text-green-600 uppercase bg-green-50 px-2 py-1 rounded">
-                  Discount: -{formatPrice(order.discountAppliedGHS)}
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-lg">
+                  <Award size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">LOYALTY SAVINGS: {formatPrice(order.discountAppliedGHS)}</span>
                 </div>
               )}
             </div>
