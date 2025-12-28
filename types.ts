@@ -3,7 +3,7 @@ export type Currency = 'GHS' | 'USD';
 
 export type SortOption = 'default' | 'price-low' | 'price-high' | 'rating';
 
-export type UserRole = 'CLIENT' | 'PARTNER';
+export type UserRole = 'CLIENT' | 'PARTNER' | 'ADMIN';
 
 export interface Review {
   id: string;
@@ -62,6 +62,7 @@ export enum View {
   PARTNER = 'partner',
   PARTNER_DASHBOARD = 'partner_dashboard',
   PARTNER_SETTINGS = 'partner_settings',
+  ADMIN_DASHBOARD = 'admin_dashboard',
   PRIVACY = 'privacy',
   TERMS = 'terms'
 }
