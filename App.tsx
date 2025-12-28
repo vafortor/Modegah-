@@ -17,7 +17,7 @@ import ReceiptModal from './components/ReceiptModal';
 import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus } from './types';
 import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS } from './constants';
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,7 +43,10 @@ const App: React.FC = () => {
   // Admin Editing State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adminTab, setAdminTab] = useState<'overview' | 'products' | 'partners'>('overview');
+  const [isCameraActive, setIsCameraActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Security Redirection Logic
   useEffect(() => {
@@ -174,6 +177,7 @@ const App: React.FC = () => {
   const handleUpdateProduct = (updatedProduct: Product) => {
     setProductList(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
     setEditingProduct(null);
+    setIsCameraActive(false);
     addNotification('success', 'Catalogue Updated', `${updatedProduct.name} has been updated.`);
   };
 
@@ -181,6 +185,7 @@ const App: React.FC = () => {
     const id = Math.random().toString(36).substr(2, 9);
     setProductList(prev => [{...newProduct, id}, ...prev]);
     setEditingProduct(null);
+    setIsCameraActive(false);
     addNotification('success', 'Product Added', `${newProduct.name} added to the catalogue.`);
   };
 
@@ -220,6 +225,48 @@ const App: React.FC = () => {
         });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      setIsCameraActive(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      addNotification('error', 'Camera Error', 'Could not access your device camera.');
+      setIsCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const takeSnapshot = () => {
+    if (videoRef.current && canvasRef.current && editingProduct) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        setEditingProduct({ ...editingProduct, image: dataUrl });
+        stopCamera();
+        addNotification('success', 'Photo Captured', 'Live visual applied to product.');
+      }
     }
   };
 
@@ -334,43 +381,43 @@ const App: React.FC = () => {
                     <Plus size={18} /> Add New SKU
                   </button>
                 </div>
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Image</th>
-                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Details</th>
-                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Price</th>
-                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Visibility</th>
-                        <th className="p-5 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Admin Actions</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Image</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Details</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Price</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Visibility</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Admin Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {productList.map(p => (
                         <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-5">
-                            <img src={p.image} className="w-14 h-14 rounded-2xl object-cover border border-slate-100" />
+                          <td className="p-6">
+                            <img src={p.image} className="w-20 h-20 rounded-2xl object-cover border border-slate-100 shadow-sm" alt={p.name} />
                           </td>
-                          <td className="p-5">
-                            <p className="font-bold text-slate-900">{p.name}</p>
-                            <p className="text-xs text-slate-500">{p.category} — {p.factoryName}</p>
-                            <p className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tighter">{p.specifications.dimensions} • {p.specifications.strength}</p>
+                          <td className="p-6">
+                            <p className="font-bold text-slate-900 text-base">{p.name}</p>
+                            <p className="text-xs text-slate-500 font-medium">{p.category} — {p.factoryName}</p>
+                            <p className="text-[10px] text-amber-600 font-black mt-1 uppercase tracking-tighter">{p.specifications.dimensions} • {p.specifications.strength}</p>
                           </td>
-                          <td className="p-5 text-center">
-                            <p className="font-bold text-slate-900">{formatPrice(p.price)}</p>
+                          <td className="p-6 text-center">
+                            <p className="font-black text-slate-900 text-lg">{formatPrice(p.price)}</p>
                           </td>
-                          <td className="p-5 text-center">
+                          <td className="p-6 text-center">
                             <button 
                               onClick={() => handleUpdateProduct({ ...p, isActive: !p.isActive })}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}
+                              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${p.isActive ? 'bg-green-100 text-green-700 shadow-sm' : 'bg-slate-100 text-slate-400'}`}
                             >
                               {p.isActive ? <Eye size={12} /> : <EyeOff size={12} />}
                               {p.isActive ? 'Public' : 'Hidden'}
                             </button>
                           </td>
-                          <td className="p-5 text-right space-x-2">
-                            <button onClick={() => setEditingProduct(p)} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"><Edit3 size={18} /></button>
-                            <button onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"><Trash2 size={18} /></button>
+                          <td className="p-6 text-right space-x-2">
+                            <button onClick={() => setEditingProduct(p)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"><Edit3 size={18} /></button>
+                            <button onClick={() => handleDeleteProduct(p.id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors shadow-sm"><Trash2 size={18} /></button>
                           </td>
                         </tr>
                       ))}
@@ -539,11 +586,11 @@ const App: React.FC = () => {
 
       {editingProduct && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setEditingProduct(null)} />
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => { stopCamera(); setEditingProduct(null); }} />
           <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-3xl font-bebas text-slate-900">{editingProduct.id ? 'EDIT' : 'ADD'} <span className="text-amber-500">CATALOGUE ITEM</span></h3>
-              <button onClick={() => setEditingProduct(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={24} /></button>
+              <button onClick={() => { stopCamera(); setEditingProduct(null); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={24} /></button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -552,21 +599,67 @@ const App: React.FC = () => {
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Product Visual</label>
                 <div 
                   className="w-full aspect-square bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
                 >
-                  {editingProduct.image ? (
+                  {isCameraActive ? (
+                    <div className="w-full h-full relative">
+                      <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 px-4">
+                        <button 
+                          onClick={takeSnapshot}
+                          className="bg-amber-500 text-slate-900 p-3 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                          title="Capture Photo"
+                        >
+                          <Camera size={24} />
+                        </button>
+                        <button 
+                          onClick={stopCamera}
+                          className="bg-red-500 text-white p-3 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                          title="Close Camera"
+                        >
+                          <X size={24} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : editingProduct.image ? (
                     <>
                       <img src={editingProduct.image} className="w-full h-full object-cover" alt="Preview" />
-                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-4 text-center">
-                        <Upload size={32} className="mb-2" />
-                        <p className="text-xs font-bold uppercase tracking-widest">Change Image</p>
+                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-4 text-center gap-4">
+                        <div className="flex gap-4">
+                           <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-2xl flex flex-col items-center gap-1 min-w-[100px]"
+                           >
+                            <Upload size={24} />
+                            <span className="text-[10px] font-bold uppercase">Replace</span>
+                           </button>
+                           <button 
+                            onClick={startCamera}
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-900 p-3 rounded-2xl flex flex-col items-center gap-1 min-w-[100px]"
+                           >
+                            <Camera size={24} />
+                            <span className="text-[10px] font-bold uppercase">New Photo</span>
+                           </button>
+                        </div>
                       </div>
                     </>
                   ) : (
-                    <>
-                      <ImageIcon size={48} className="text-slate-300 mb-4" />
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Click to Upload</p>
-                    </>
+                    <div className="flex flex-col items-center gap-4">
+                      <ImageIcon size={48} className="text-slate-300" />
+                      <div className="flex gap-3">
+                         <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-slate-200 hover:bg-slate-300 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase flex items-center gap-2"
+                         >
+                          <Upload size={14} /> Upload
+                         </button>
+                         <button 
+                          onClick={startCamera}
+                          className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-xl text-[10px] font-bold uppercase flex items-center gap-2"
+                         >
+                          <Camera size={14} /> Camera
+                         </button>
+                      </div>
+                    </div>
                   )}
                   <input 
                     type="file" 
@@ -575,6 +668,7 @@ const App: React.FC = () => {
                     accept="image/*" 
                     onChange={handleImageUpload} 
                   />
+                  <canvas ref={canvasRef} className="hidden" />
                 </div>
                 <div className="relative">
                   <input 
@@ -630,7 +724,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex gap-4 mt-10">
-              <button onClick={() => setEditingProduct(null)} className="flex-1 bg-slate-100 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">Discard Changes</button>
+              <button onClick={() => { stopCamera(); setEditingProduct(null); }} className="flex-1 bg-slate-100 py-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">Discard Changes</button>
               <button 
                 onClick={() => editingProduct.id ? handleUpdateProduct(editingProduct) : handleAddProduct(editingProduct)} 
                 className="flex-1 bg-slate-900 py-4 rounded-2xl font-bold text-white shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95"
