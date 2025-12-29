@@ -181,24 +181,49 @@ export const INITIAL_REVIEWS: Review[] = [
 ];
 
 export const GHS_TO_USD_RATE = 0.063;
+
 export const INITIAL_ORDERS: Order[] = [
   {
     id: 'MOD-88291',
     transactionId: 'TXN-ACC-99221',
     date: '12 Sep 2024',
-    items: [],
-    subtotalGHS: 4500,
-    discountAppliedGHS: 0,
-    totalGHS: 4500,
+    items: [
+      { ...PRODUCTS[0], quantity: 500 },
+      { ...PRODUCTS[1], quantity: 250 }
+    ],
+    subtotalGHS: 10875,
+    discountAppliedGHS: 543.75,
+    totalGHS: 10331.25,
     status: 'Out for Delivery',
     currencyAtTime: 'GHS',
     exchangeRateAtTime: 0.063,
     paymentMethod: 'Mobile Money',
     trackingDetails: {
-      currentLocation: 'Spintex Road, Accra',
-      estimatedArrival: 'Today, 4:00 PM',
+      currentLocation: 'Spintex Road, Near Coca-Cola Roundabout',
+      estimatedArrival: 'Today, 4:45 PM',
       driverName: 'Ekow Barnes',
       driverPhone: '+233 24 000 1122'
+    }
+  },
+  {
+    id: 'MOD-91024',
+    transactionId: 'TXN-LGN-11022',
+    date: '08 Sep 2024',
+    items: [
+      { ...PRODUCTS[2], quantity: 1200 }
+    ],
+    subtotalGHS: 18240,
+    discountAppliedGHS: 0,
+    totalGHS: 18240,
+    status: 'Delivered',
+    currencyAtTime: 'GHS',
+    exchangeRateAtTime: 0.063,
+    paymentMethod: 'Bank Transfer',
+    trackingDetails: {
+      currentLocation: 'Delivered to Site: Legon Extension',
+      estimatedArrival: 'Completed',
+      driverName: 'Isaac Quarshie',
+      driverPhone: '+233 20 111 2233'
     }
   }
 ];

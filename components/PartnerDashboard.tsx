@@ -1,8 +1,14 @@
 
-import React from 'react';
-import { Package, TrendingUp, ShieldCheck, Factory, Clock, AlertCircle, ChevronRight, LayoutDashboard, BarChart3, Truck, Zap, CreditCard, ExternalLink, CheckCircle, BarChart, Activity, DollarSign, ArrowUpRight, MapPin, Navigation } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, TrendingUp, ShieldCheck, Factory, Clock, AlertCircle, ChevronRight, LayoutDashboard, BarChart3, Truck, Zap, CreditCard, ExternalLink, CheckCircle, BarChart, Activity, DollarSign, ArrowUpRight, MapPin, Navigation, Loader2, Download } from 'lucide-react';
 
-const PartnerDashboard: React.FC = () => {
+interface PartnerDashboardProps {
+  addNotification?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
+}
+
+const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ addNotification }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const stats = [
     { label: 'Pending Assignments', value: '08', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'Production (24h)', value: '3,200', icon: Factory, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -22,13 +28,52 @@ const PartnerDashboard: React.FC = () => {
     { id: 'T-03', type: 'DAF 15T', driver: 'Yaw', status: 'Loading', load: '40%', dest: 'Tema Port' },
   ];
 
-  const revenueByMonth = [
-    { month: 'May', amount: 45 },
-    { month: 'Jun', amount: 52 },
-    { month: 'Jul', amount: 48 },
-    { month: 'Aug', amount: 61 },
-    { month: 'Sep', amount: 68 },
-  ];
+  const handleDownloadStatement = () => {
+    setIsDownloading(true);
+    
+    // Simulate generation delay
+    setTimeout(() => {
+      const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const content = `
+MODEGAH BLOCK FACTORY NETWORK
+PARTNER FINANCIAL STATEMENT
+-----------------------------------------
+FACTORY: Elite Concrete Partners (Unit 04)
+LOCATION: Tema Community 25, Gt. Accra
+DATE GENERATED: ${date}
+CYCLE PERIOD: September 2024
+-----------------------------------------
+
+SUMMARY:
+Gross Revenue this cycle: GH₵ 4,250.00
+Modegah Network Fee (2.5%): GH₵ 106.25
+Net Payout Amount: GH₵ 4,143.75
+Total Payouts to Date: GH₵ 68,400.00
+
+RECENT TRANSACTIONS:
+1. MOD-1044 | 800 units 6" Hollow  | GH₵ 10,000.00
+2. MOD-1042 | 2500 units 8" Solid  | GH₵ 46,250.00
+3. MOD-1039 | 450 units Paving     | GH₵ 2,025.00
+-----------------------------------------
+This is an electronically generated statement.
+For support, contact accounts@modegah.com
+      `;
+
+      const blob = new Blob([content.trim()], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Modegah_Statement_Elite_Sept24.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setIsDownloading(false);
+      if (addNotification) {
+        addNotification('success', 'Statement Downloaded', 'Your September financial summary has been saved to your device.');
+      }
+    }, 1500);
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
@@ -164,8 +209,17 @@ const PartnerDashboard: React.FC = () => {
                   <span className="text-red-400 font-bold">- GH₵ 106.25</span>
                 </div>
               </div>
-              <button className="w-full bg-amber-500 text-slate-900 py-3.5 rounded-xl font-bold text-sm hover:bg-amber-400 transition-all flex items-center justify-center gap-2">
-                <DollarSign size={18} /> Download Statement
+              <button 
+                onClick={handleDownloadStatement}
+                disabled={isDownloading}
+                className="w-full bg-amber-500 text-slate-900 py-3.5 rounded-xl font-bold text-sm hover:bg-amber-400 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-amber-500/10 active:scale-95"
+              >
+                {isDownloading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <Download size={18} />
+                )}
+                {isDownloading ? 'Generating...' : 'Download Statement'}
               </button>
             </div>
             <BarChart className="absolute -bottom-10 -right-10 text-white/5" size={240} />

@@ -7,6 +7,21 @@ export type UserRole = 'CLIENT' | 'PARTNER' | 'ADMIN';
 
 export type PartnerStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export interface UserProfile {
+  fullName: string;
+  phone: string;
+  email: string;
+  deliveryAddress: string;
+  businessName?: string;
+}
+
+export interface NotificationSettings {
+  orderUpdates: boolean;
+  promotions: boolean;
+  securityAlerts: boolean;
+  newsletter: boolean;
+}
+
 export interface Partner {
   id: string;
   name: string;
@@ -82,12 +97,15 @@ export enum View {
   SHOP = 'shop',
   CALCULATOR = 'calculator',
   ORDERS = 'orders',
+  WISHLIST = 'wishlist',
   PARTNER = 'partner',
   PARTNER_DASHBOARD = 'partner_dashboard',
   PARTNER_SETTINGS = 'partner_settings',
   ADMIN_DASHBOARD = 'admin_dashboard',
   PRIVACY = 'privacy',
-  TERMS = 'terms'
+  TERMS = 'terms',
+  PROFILE = 'profile',
+  FORGOT_PASSWORD = 'forgot_password'
 }
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';

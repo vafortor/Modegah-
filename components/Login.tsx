@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
 import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap } from 'lucide-react';
-import { UserRole } from '../types';
+import { UserRole, View } from '../types';
 import BlockIcon from './BlockIcon';
 
 interface LoginProps {
   onLogin: (role: UserRole) => void;
+  setView: (view: View) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [activeTab, setActiveTab] = useState<UserRole>('CLIENT');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -219,7 +220,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Security Password</label>
+                   <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Security Password</label>
+                    {!isSignUp && activeTab === 'CLIENT' && (
+                      <button 
+                        type="button"
+                        onClick={() => setView(View.FORGOT_PASSWORD)}
+                        className="text-[9px] font-black text-amber-500 hover:text-white uppercase tracking-widest transition-colors"
+                      >
+                        Forgot Access?
+                      </button>
+                    )}
+                   </div>
                   <div className="relative">
                     <input 
                       type="password"
