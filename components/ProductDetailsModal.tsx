@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Product, Review } from '../types';
-import { X, Star, ShoppingCart, ShieldCheck, Ruler, Weight, Hammer, Send, User, Clock, Factory, Info, Heart, CheckCircle2, MapPin } from 'lucide-react';
+import { X, Star, ShoppingCart, ShieldCheck, Ruler, Weight, Hammer, Send, User, Clock, Factory, Info, Heart, CheckCircle2, MapPin, Edit3 } from 'lucide-react';
 
 interface ProductDetailsModalProps {
   product: Product;
@@ -12,10 +12,12 @@ interface ProductDetailsModalProps {
   onToggleWishlist: (product: Product) => void;
   reviews: Review[];
   onAddReview: (productId: string, rating: number, comment: string, userName: string) => void;
+  isAdmin?: boolean;
+  onEdit?: (product: Product) => void;
 }
 
 const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ 
-  product, onClose, formatPrice, onAddToCart, isWishlisted, onToggleWishlist, reviews, onAddReview
+  product, onClose, formatPrice, onAddToCart, isWishlisted, onToggleWishlist, reviews, onAddReview, isAdmin, onEdit
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
   const [newRating, setNewRating] = useState(5);
@@ -68,14 +70,24 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                </div>
             </div>
             
-            <button 
-              onClick={() => onToggleWishlist(product)}
-              className={`p-5 rounded-[2rem] backdrop-blur-md transition-all duration-300 shadow-2xl active:scale-75 border ${
-                isWishlisted ? 'bg-pink-500 border-pink-400 text-white' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-              }`}
-            >
-              <Heart size={28} fill={isWishlisted ? "currentColor" : "none"} />
-            </button>
+            {!isAdmin ? (
+              <button 
+                onClick={() => onToggleWishlist(product)}
+                className={`p-5 rounded-[2rem] backdrop-blur-md transition-all duration-300 shadow-2xl active:scale-75 border ${
+                  isWishlisted ? 'bg-pink-500 border-pink-400 text-white' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                }`}
+              >
+                <Heart size={28} fill={isWishlisted ? "currentColor" : "none"} />
+              </button>
+            ) : (
+              <button 
+                onClick={() => onEdit?.(product)}
+                className="p-5 rounded-[2rem] bg-blue-600 border border-blue-500 text-white shadow-2xl hover:bg-blue-700 transition-all active:scale-75 flex items-center gap-3"
+              >
+                <Edit3 size={28} />
+                <span className="font-bebas text-xl tracking-wide uppercase">Edit Asset</span>
+              </button>
+            )}
           </div>
         </div>
 

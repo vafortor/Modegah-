@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Product } from '../types';
-import { Plus, Star, CheckCircle, Clock, Eye, Factory, Heart, Info } from 'lucide-react';
+import { Plus, Star, CheckCircle, Clock, Eye, Factory, Heart, Info, Edit3, Award } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -10,15 +10,19 @@ interface ProductCardProps {
   formatPrice: (price: number) => string;
   isWishlisted?: boolean;
   onToggleWishlist: (product: Product) => void;
+  isAdmin?: boolean;
+  onEdit?: (product: Product) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ 
-  product, onAddToCart, onShowDetails, formatPrice, isWishlisted, onToggleWishlist 
+  product, onAddToCart, onShowDetails, formatPrice, isWishlisted, onToggleWishlist, isAdmin, onEdit
 }) => {
   const isPartner = !product.factoryName.toLowerCase().includes('modegah');
 
   return (
-    <div className="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full relative overflow-hidden">
+    <div className={`group bg-white rounded-[2rem] border transition-all duration-500 flex flex-col h-full relative overflow-hidden ${
+      product.isFeatured ? 'border-amber-500/30 shadow-xl shadow-amber-500/5' : 'border-slate-100 shadow-sm'
+    } hover:shadow-2xl hover:-translate-y-2`}>
       {/* Product Image Area */}
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
         <img 
@@ -27,17 +31,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
         />
         
-        {/* Wishlist Button */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
-          className={`absolute top-4 left-4 p-2.5 rounded-full backdrop-blur-md border transition-all duration-300 z-10 active:scale-75 ${
-            isWishlisted 
-              ? 'bg-pink-500 border-pink-400 text-white shadow-lg' 
-              : 'bg-white/80 border-white/20 text-slate-400 hover:text-pink-500 hover:bg-white shadow-sm'
-          }`}
-        >
-          <Heart size={18} fill={isWishlisted ? "currentColor" : "none"} />
-        </button>
+        {/* Wishlist Button (Clients) or Edit Button (Admins) */}
+        {!isAdmin ? (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
+            className={`absolute top-4 left-4 p-2.5 rounded-full backdrop-blur-md border transition-all duration-300 z-10 active:scale-75 ${
+              isWishlisted 
+                ? 'bg-pink-500 border-pink-400 text-white shadow-lg' 
+                : 'bg-white/80 border-white/20 text-slate-400 hover:text-pink-500 hover:bg-white shadow-sm'
+            }`}
+          >
+            <Heart size={18} fill={isWishlisted ? "currentColor" : "none"} />
+          </button>
+        ) : (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onEdit?.(product); }}
+            className="absolute top-4 left-4 p-2.5 rounded-full bg-blue-600 border border-blue-500 text-white shadow-xl z-10 hover:bg-blue-700 transition-all active:scale-75"
+            title="Edit SKU"
+          >
+            <Edit3 size={18} />
+          </button>
+        )}
 
         {/* Action Overlays */}
         <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-3">
@@ -49,8 +63,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </button>
         </div>
 
-        {/* Category Badge */}
+        {/* Category & Status Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
+          {product.isFeatured && (
+            <span className="bg-amber-500 text-slate-900 text-[8px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest flex items-center gap-1 shadow-lg border border-amber-400">
+              <Award size={10} fill="currentColor" /> RECOMMENDED
+            </span>
+          )}
           <span className="bg-slate-900/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest border border-white/10 shadow-xl">
             {product.category}
           </span>
@@ -98,14 +117,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-50">
           <div>
             <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] block mb-1">UNIT RATE</span>
-            <div className="text-2xl font-bebas tracking-wide text-slate-900 leading-none">
+            <div className={`text-2xl font-bebas tracking-wide leading-none ${product.isFeatured ? 'text-amber-600' : 'text-slate-900'}`}>
               {formatPrice(product.price)}
             </div>
           </div>
           
           <button 
             onClick={() => onAddToCart(product)}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-5 py-3 rounded-2xl transition-all flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-95"
+            className={`px-5 py-3 rounded-2xl transition-all flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 ${
+              product.isFeatured 
+                ? 'bg-slate-900 text-amber-500 hover:bg-slate-800 shadow-slate-900/10' 
+                : 'bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-amber-500/20'
+            }`}
           >
             <Plus size={18} strokeWidth={3} /> Buy
           </button>

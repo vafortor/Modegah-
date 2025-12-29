@@ -61,6 +61,7 @@ export interface Product {
     strength: string;
   };
   isActive: boolean; // For admin to toggle availability
+  isFeatured?: boolean; // For prioritizing items in the catalogue
 }
 
 export interface CartItem extends Product {

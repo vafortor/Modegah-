@@ -17,7 +17,8 @@ export const PRODUCTS: Product[] = [
       weight: '16.5kg',
       strength: '3.5 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: true
   },
   {
     id: '2',
@@ -34,7 +35,8 @@ export const PRODUCTS: Product[] = [
       weight: '22kg',
       strength: '5.0 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: false
   },
   {
     id: '3',
@@ -51,7 +53,8 @@ export const PRODUCTS: Product[] = [
       weight: '24kg',
       strength: '7.5 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: true
   },
   {
     id: '4',
@@ -68,7 +71,8 @@ export const PRODUCTS: Product[] = [
       weight: '3.2kg',
       strength: '40 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: false
   },
   {
     id: '5',
@@ -85,7 +89,8 @@ export const PRODUCTS: Product[] = [
       weight: '8.5kg',
       strength: '2.5 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: false
   },
   {
     id: '6',
@@ -102,7 +107,8 @@ export const PRODUCTS: Product[] = [
       weight: '14.2kg',
       strength: '3.5 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: false
   },
   {
     id: '7',
@@ -119,7 +125,8 @@ export const PRODUCTS: Product[] = [
       weight: '4.1kg',
       strength: '45 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: false
   },
   {
     id: 'c1',
@@ -136,7 +143,8 @@ export const PRODUCTS: Product[] = [
       weight: '50kg',
       strength: '42.5 N/mm²'
     },
-    isActive: true
+    isActive: true,
+    isFeatured: true
   }
 ];
 

@@ -19,7 +19,7 @@ import ReceiptModal from './components/ReceiptModal';
 import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus, UserProfile, NotificationSettings } from './types';
 import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS } from './constants';
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash } from 'lucide-react';
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -59,10 +59,13 @@ const App: React.FC = () => {
     newsletter: false
   });
 
-  // Admin Editing State
+  // Admin Customization State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adminTab, setAdminTab] = useState<'overview' | 'products' | 'partners'>('overview');
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
+  const [bulkAdjustmentPct, setBulkAdjustmentPct] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -186,9 +189,18 @@ const App: React.FC = () => {
       const isVisible = userRole === 'ADMIN' ? true : p.isActive;
       return matchesCategory && matchesSearch && isVisible;
     });
-    if (sortOption === 'price-low') result.sort((a, b) => a.price - b.price);
-    else if (sortOption === 'price-high') result.sort((a, b) => b.price - a.price);
-    else if (sortOption === 'rating') result.sort((a, b) => b.averageRating - a.averageRating);
+    
+    // Sort Featured items first, then by option
+    result.sort((a, b) => {
+      if (a.isFeatured && !b.isFeatured) return -1;
+      if (!a.isFeatured && b.isFeatured) return 1;
+      
+      if (sortOption === 'price-low') return a.price - b.price;
+      if (sortOption === 'price-high') return b.price - a.price;
+      if (sortOption === 'rating') return b.averageRating - a.averageRating;
+      return 0;
+    });
+    
     return result;
   }, [selectedCategory, searchQuery, sortOption, productList, userRole]);
 
@@ -218,6 +230,7 @@ const App: React.FC = () => {
     setProductList(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
     setEditingProduct(null);
     setIsCameraActive(false);
+    setIsUploading(false);
     addNotification('success', 'Catalogue Updated', `${updatedProduct.name} has been updated in the network.`);
   };
 
@@ -226,6 +239,7 @@ const App: React.FC = () => {
     setProductList(prev => [{...newProduct, id}, ...prev]);
     setEditingProduct(null);
     setIsCameraActive(false);
+    setIsUploading(false);
     addNotification('success', 'Product Added', `${newProduct.name} added to the catalogue.`);
   };
 
@@ -234,6 +248,22 @@ const App: React.FC = () => {
       setProductList(prev => prev.filter(p => p.id !== id));
       addNotification('warning', 'Product Removed', 'The item has been permanently deleted from the catalogue.');
     }
+  };
+
+  const handleCloneProduct = (product: Product) => {
+    const cloned = { ...product, id: Math.random().toString(36).substr(2, 9), name: `${product.name} (Clone)` };
+    setProductList(prev => [cloned, ...prev]);
+    addNotification('success', 'Product Cloned', `Created a copy of ${product.name}.`);
+  };
+
+  const handleApplyBulkPrice = () => {
+    const multiplier = 1 + (bulkAdjustmentPct / 100);
+    setProductList(prev => prev.map(p => ({
+      ...p,
+      price: Number((p.price * multiplier).toFixed(2))
+    })));
+    setShowBulkPriceModal(false);
+    addNotification('success', 'Bulk Update Complete', `All catalogue prices adjusted by ${bulkAdjustmentPct}%.`);
   };
 
   const handleUpdatePartnerStatus = (partnerId: string, status: PartnerStatus) => {
@@ -257,12 +287,14 @@ const App: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingProduct) {
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setEditingProduct({
           ...editingProduct,
           image: reader.result as string
         });
+        setIsUploading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -433,6 +465,8 @@ const App: React.FC = () => {
                   onShowDetails={(p) => setSelectedProduct(p)}
                   isWishlisted={wishlist.some(wp => wp.id === product.id)}
                   onToggleWishlist={toggleWishlist}
+                  isAdmin={userRole === 'ADMIN'}
+                  onEdit={(p) => setEditingProduct(p)}
                 />
               ))}
             </div>
@@ -483,6 +517,8 @@ const App: React.FC = () => {
                     onShowDetails={(p) => setSelectedProduct(p)}
                     isWishlisted={true}
                     onToggleWishlist={toggleWishlist}
+                    isAdmin={userRole === 'ADMIN'}
+                    onEdit={(p) => setEditingProduct(p)}
                   />
                 ))}
               </div>
@@ -558,29 +594,38 @@ const App: React.FC = () => {
 
             {adminTab === 'products' && (
               <div className="space-y-8 animate-in fade-in duration-500">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                   <h3 className="text-2xl font-bebas tracking-wide text-slate-800 uppercase">Catalogue Master Control</h3>
-                  <button 
-                    onClick={() => setEditingProduct({ id: '', name: '', category: 'Hollow', price: 0, description: '', image: '', averageRating: 5, reviewCount: 0, factoryName: 'Modegah Shai Hills', specifications: { dimensions: '', weight: '', strength: '' }, isActive: true })}
-                    className="bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 shadow-xl shadow-slate-900/10 active:scale-95"
-                  >
-                    <Plus size={18} /> Provision New SKU
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    <button 
+                      onClick={() => setShowBulkPriceModal(true)}
+                      className="bg-white border border-slate-200 text-slate-700 px-6 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all active:scale-95"
+                    >
+                      <TrendingUp size={18} className="text-amber-500" /> Adjust Pricing
+                    </button>
+                    <button 
+                      onClick={() => setEditingProduct({ id: '', name: '', category: 'Hollow', price: 0, description: '', image: '', averageRating: 5, reviewCount: 0, factoryName: 'Modegah Shai Hills', specifications: { dimensions: '', weight: '', strength: '' }, isActive: true, isFeatured: false })}
+                      className="bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 shadow-xl shadow-slate-900/10 active:scale-95"
+                    >
+                      <Plus size={18} /> Provision New SKU
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-                  <table className="w-full text-left border-collapse">
+
+                <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Visual</th>
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Metadata</th>
-                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Unit Price</th>
-                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Network Visibility</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Price</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Pro Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {productList.map(p => (
-                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                        <tr key={p.id} className={`hover:bg-slate-50/50 transition-colors ${p.isFeatured ? 'bg-amber-50/20' : ''}`}>
                           <td className="p-8">
                             <div className="relative group/img w-24 h-24">
                               <img src={p.image} className="w-full h-full rounded-3xl object-cover border border-slate-100 shadow-sm" alt={p.name} />
@@ -609,7 +654,10 @@ const App: React.FC = () => {
                             </div>
                           </td>
                           <td className="p-8">
-                            <p className="font-black text-slate-900 text-lg uppercase tracking-tight">{p.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-slate-900 text-lg uppercase tracking-tight">{p.name}</p>
+                              {p.isFeatured && <Award size={16} className="text-amber-500" fill="currentColor" />}
+                            </div>
                             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{p.category} — {p.factoryName}</p>
                             <p className="text-[10px] text-amber-600 font-black mt-2 uppercase tracking-tighter flex items-center gap-1">
                               <Box size={10} /> {p.specifications.dimensions} • {p.specifications.strength}
@@ -618,19 +666,27 @@ const App: React.FC = () => {
                           <td className="p-8 text-center">
                             <p className="font-black text-slate-900 text-xl font-bebas tracking-wide">{formatPrice(p.price)}</p>
                           </td>
-                          <td className="p-8 text-center">
+                          <td className="p-8 text-center space-y-2">
                             <button 
                               onClick={() => handleUpdateProduct({ ...p, isActive: !p.isActive })}
-                              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${p.isActive ? 'bg-green-100 text-green-700 shadow-sm' : 'bg-slate-100 text-slate-400'}`}
+                              className={`w-full inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${p.isActive ? 'bg-green-100 text-green-700 shadow-sm' : 'bg-slate-100 text-slate-400'}`}
                             >
                               {p.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
                               {p.isActive ? 'ACTIVE' : 'DORMANT'}
                             </button>
+                            <button 
+                              onClick={() => handleUpdateProduct({ ...p, isFeatured: !p.isFeatured })}
+                              className={`w-full inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${p.isFeatured ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/10' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}
+                            >
+                              <Award size={14} />
+                              {p.isFeatured ? 'FEATURED' : 'STANDARD'}
+                            </button>
                           </td>
                           <td className="p-8 text-right">
-                             <div className="flex justify-end gap-3">
-                              <button onClick={() => setEditingProduct(p)} className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-colors shadow-sm"><Edit3 size={20} /></button>
-                              <button onClick={() => handleDeleteProduct(p.id)} className="p-4 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors shadow-sm"><Trash2 size={20} /></button>
+                             <div className="flex justify-end gap-2">
+                              <button onClick={() => handleCloneProduct(p)} className="p-4 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-colors shadow-sm" title="Clone SKU"><Copy size={20} /></button>
+                              <button onClick={() => setEditingProduct(p)} className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-colors shadow-sm" title="Edit SKU"><Edit3 size={20} /></button>
+                              <button onClick={() => handleDeleteProduct(p.id)} className="p-4 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors shadow-sm" title="Delete SKU"><Trash2 size={20} /></button>
                              </div>
                           </td>
                         </tr>
@@ -670,9 +726,56 @@ const App: React.FC = () => {
           onToggleWishlist={toggleWishlist}
           reviews={reviews.filter(r => r.productId === selectedProduct.id)} 
           onAddReview={handleAddReview} 
+          isAdmin={userRole === 'ADMIN'}
+          onEdit={(p) => { setSelectedProduct(null); setEditingProduct(p); }}
         />
       )}
       {selectedReceiptOrder && <ReceiptModal order={selectedReceiptOrder} onClose={() => setSelectedReceiptOrder(null)} formatPrice={formatPrice} />}
+
+      {/* Bulk Price Adjustment Modal */}
+      {showBulkPriceModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setShowBulkPriceModal(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
+            <h3 className="text-3xl font-bebas text-slate-900 mb-6 uppercase">Bulk Price <span className="text-amber-500">Adjustment</span></h3>
+            <p className="text-sm text-slate-500 mb-8 font-medium">Shift all catalogue prices based on market volatility. Use positive values for increases and negative for discounts.</p>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Percentage Change (%)</label>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setBulkAdjustmentPct(prev => prev - 1)} className="p-4 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors"><MoveDown size={20} /></button>
+                  <input 
+                    type="number" 
+                    value={bulkAdjustmentPct} 
+                    onChange={e => setBulkAdjustmentPct(parseFloat(e.target.value))}
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 font-black text-2xl text-center" 
+                  />
+                  <button onClick={() => setBulkAdjustmentPct(prev => prev + 1)} className="p-4 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors"><MoveUp size={20} /></button>
+                </div>
+              </div>
+
+              <div className="p-6 bg-amber-50 border border-amber-100 rounded-2xl space-y-2">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Projection Example</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-500">Standard Block (GH₵ 12.50)</span>
+                  <span className="text-sm font-black text-slate-900">→ GH₵ {(12.50 * (1 + bulkAdjustmentPct/100)).toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button onClick={() => setShowBulkPriceModal(false)} className="flex-1 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 bg-slate-50 hover:bg-slate-100 transition-all">Cancel</button>
+                <button 
+                  onClick={handleApplyBulkPrice}
+                  className="flex-[2] bg-slate-900 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-900/10 hover:bg-slate-800 transition-all"
+                >
+                  Confirm Global Shift
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingProduct && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8">
@@ -697,11 +800,23 @@ const App: React.FC = () => {
                     </div>
                   ) : editingProduct.image ? (
                     <>
-                      <img src={editingProduct.image} className="w-full h-full object-cover" alt="Preview" />
+                      <img src={editingProduct.image} className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : 'opacity-100'}`} alt="Preview" />
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
+                          <Loader2 className="animate-spin text-amber-500" size={48} />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 p-8">
-                           <button onClick={() => fileInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Upload size={24} className="text-white" /><span className="text-[9px] font-black text-white uppercase">Upload File</span></button>
+                           <button onClick={() => fileInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Upload size={24} className="text-white" /><span className="text-[9px] font-black text-white uppercase">Replace File</span></button>
                            <button onClick={startCamera} className="bg-amber-500 hover:bg-amber-400 px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Camera size={24} className="text-slate-900" /><span className="text-[9px] font-black text-slate-900 uppercase">Live Capture</span></button>
                       </div>
+                      <button 
+                        onClick={() => setEditingProduct({...editingProduct, image: ''})}
+                        className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-colors"
+                        title="Clear Image"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </>
                   ) : (
                     <div className="flex flex-col items-center gap-6">
@@ -744,6 +859,19 @@ const App: React.FC = () => {
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Unit Price (GHS)</label>
                     <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 font-black text-xl" />
                   </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Featured Status</p>
+                    <p className="text-[10px] text-slate-400 font-bold">Promote this SKU to top of catalogue</p>
+                  </div>
+                  <button 
+                    onClick={() => setEditingProduct({...editingProduct, isFeatured: !editingProduct.isFeatured})}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${editingProduct.isFeatured ? 'bg-amber-500' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingProduct.isFeatured ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
                 </div>
 
                 <div>
