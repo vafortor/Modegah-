@@ -62,6 +62,7 @@ export interface Product {
   };
   isActive: boolean; // For admin to toggle availability
   isFeatured?: boolean; // For prioritizing items in the catalogue
+  displayOrder: number; // Manual sequence for the catalogue
 }
 
 export interface CartItem extends Product {

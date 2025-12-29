@@ -19,7 +19,7 @@ import ReceiptModal from './components/ReceiptModal';
 import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus, UserProfile, NotificationSettings } from './types';
 import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS } from './constants';
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown } from 'lucide-react';
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,11 +61,13 @@ const App: React.FC = () => {
 
   // Admin Customization State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [adminTab, setAdminTab] = useState<'overview' | 'products' | 'partners'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'products' | 'partners' | 'catalogue_designer'>('overview');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
   const [bulkAdjustmentPct, setBulkAdjustmentPct] = useState(0);
+  const [adminPreviewMode, setAdminPreviewMode] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -190,7 +192,7 @@ const App: React.FC = () => {
       return matchesCategory && matchesSearch && isVisible;
     });
     
-    // Sort Featured items first, then by option
+    // Sort Featured items first, then by option (including manual sequence)
     result.sort((a, b) => {
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
@@ -198,7 +200,9 @@ const App: React.FC = () => {
       if (sortOption === 'price-low') return a.price - b.price;
       if (sortOption === 'price-high') return b.price - a.price;
       if (sortOption === 'rating') return b.averageRating - a.averageRating;
-      return 0;
+      
+      // Default to manual sequence
+      return a.displayOrder - b.displayOrder;
     });
     
     return result;
@@ -236,7 +240,8 @@ const App: React.FC = () => {
 
   const handleAddProduct = (newProduct: Product) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setProductList(prev => [{...newProduct, id}, ...prev]);
+    const displayOrder = productList.length + 1;
+    setProductList(prev => [{...newProduct, id, displayOrder}, ...prev]);
     setEditingProduct(null);
     setIsCameraActive(false);
     setIsUploading(false);
@@ -251,9 +256,19 @@ const App: React.FC = () => {
   };
 
   const handleCloneProduct = (product: Product) => {
-    const cloned = { ...product, id: Math.random().toString(36).substr(2, 9), name: `${product.name} (Clone)` };
+    const cloned = { ...product, id: Math.random().toString(36).substr(2, 9), name: `${product.name} (Clone)`, displayOrder: productList.length + 1 };
     setProductList(prev => [cloned, ...prev]);
     addNotification('success', 'Product Cloned', `Created a copy of ${product.name}.`);
+  };
+
+  const handleMoveProduct = (index: number, direction: 'up' | 'down') => {
+    const newList = [...productList].sort((a, b) => a.displayOrder - b.displayOrder);
+    if (direction === 'up' && index > 0) {
+      [newList[index].displayOrder, newList[index-1].displayOrder] = [newList[index-1].displayOrder, newList[index].displayOrder];
+    } else if (direction === 'down' && index < newList.length - 1) {
+      [newList[index].displayOrder, newList[index+1].displayOrder] = [newList[index+1].displayOrder, newList[index].displayOrder];
+    }
+    setProductList(newList);
   };
 
   const handleApplyBulkPrice = () => {
@@ -556,10 +571,11 @@ const App: React.FC = () => {
                 </div>
                 <h1 className="text-6xl font-bebas tracking-wide">NETWORK <span className="text-amber-500">OVERSIGHT</span></h1>
               </div>
-              <div className="flex bg-slate-900 p-2 rounded-[2rem] border border-white/10 shadow-2xl">
-                <button onClick={() => setAdminTab('overview')} className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'overview' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>OVERVIEW</button>
-                <button onClick={() => setAdminTab('products')} className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>CATALOGUE</button>
-                <button onClick={() => setAdminTab('partners')} className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'partners' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>PARTNERS</button>
+              <div className="flex flex-wrap bg-slate-900 p-2 rounded-[2rem] border border-white/10 shadow-2xl">
+                <button onClick={() => setAdminTab('overview')} className={`px-6 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'overview' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>OVERVIEW</button>
+                <button onClick={() => setAdminTab('products')} className={`px-6 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>INVENTORY</button>
+                <button onClick={() => setAdminTab('catalogue_designer')} className={`px-6 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'catalogue_designer' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>DESIGNER</button>
+                <button onClick={() => setAdminTab('partners')} className={`px-6 py-3 rounded-[1.5rem] text-[10px] font-black tracking-widest transition-all uppercase ${adminTab === 'partners' ? 'bg-amber-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:text-white'}`}>PARTNERS</button>
               </div>
             </div>
 
@@ -604,7 +620,7 @@ const App: React.FC = () => {
                       <TrendingUp size={18} className="text-amber-500" /> Adjust Pricing
                     </button>
                     <button 
-                      onClick={() => setEditingProduct({ id: '', name: '', category: 'Hollow', price: 0, description: '', image: '', averageRating: 5, reviewCount: 0, factoryName: 'Modegah Shai Hills', specifications: { dimensions: '', weight: '', strength: '' }, isActive: true, isFeatured: false })}
+                      onClick={() => setEditingProduct({ id: '', name: '', category: 'Hollow', price: 0, description: '', image: '', averageRating: 5, reviewCount: 0, factoryName: 'Modegah Shai Hills', specifications: { dimensions: '', weight: '', strength: '' }, isActive: true, isFeatured: false, displayOrder: productList.length + 1 })}
                       className="bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 shadow-xl shadow-slate-900/10 active:scale-95"
                     >
                       <Plus size={18} /> Provision New SKU
@@ -624,7 +640,7 @@ const App: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {productList.map(p => (
+                      {productList.sort((a,b) => a.displayOrder - b.displayOrder).map((p, idx) => (
                         <tr key={p.id} className={`hover:bg-slate-50/50 transition-colors ${p.isFeatured ? 'bg-amber-50/20' : ''}`}>
                           <td className="p-8">
                             <div className="relative group/img w-24 h-24">
@@ -693,6 +709,155 @@ const App: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'catalogue_designer' && (
+              <div className="space-y-10 animate-in fade-in duration-500">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="text-2xl font-bebas tracking-wide text-slate-800 uppercase">Catalogue Sequencing</h3>
+                    <p className="text-slate-500 text-sm">Drag-free manual reordering of products for high-performance merchandising.</p>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Live Preview</span>
+                    <button 
+                      onClick={() => setAdminPreviewMode(!adminPreviewMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${adminPreviewMode ? 'bg-amber-500' : 'bg-slate-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${adminPreviewMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  <div className="space-y-4">
+                    <div className="bg-slate-900 p-5 rounded-t-3xl text-white flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest">Master Sequence List</span>
+                      <Layout size={18} className="text-amber-500" />
+                    </div>
+                    <div className="bg-white border border-slate-100 shadow-sm divide-y divide-slate-50 rounded-b-3xl overflow-hidden">
+                      {productList.sort((a,b) => a.displayOrder - b.displayOrder).map((p, idx) => (
+                        <div key={p.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors group">
+                           <div className="flex flex-col items-center text-slate-300 group-hover:text-slate-500 transition-colors">
+                             <button onClick={() => handleMoveProduct(idx, 'up')} className="p-1 hover:text-amber-500 disabled:opacity-0" disabled={idx === 0}><MoveUp size={16} /></button>
+                             <GripVertical size={18} className="my-1" />
+                             <button onClick={() => handleMoveProduct(idx, 'down')} className="p-1 hover:text-amber-500 disabled:opacity-0" disabled={idx === productList.length - 1}><MoveDown size={16} /></button>
+                           </div>
+                           <img src={p.image} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                           <div className="flex-1">
+                             <p className="text-sm font-black text-slate-900">{p.name}</p>
+                             <p className="text-[10px] text-slate-400 font-bold uppercase">{p.category} — POS: {p.displayOrder}</p>
+                           </div>
+                           <div className="flex gap-2">
+                             {p.isFeatured && <Award size={14} className="text-amber-500" fill="currentColor" />}
+                             {!p.isActive && <EyeOff size={14} className="text-slate-300" />}
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-100">
+                       <h4 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                         <Settings2 size={18} /> Global Designer Logic
+                       </h4>
+                       <div className="space-y-6">
+                         <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-amber-800">Featured Items Stick to Top</p>
+                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[9px] font-black uppercase">Always Active</span>
+                         </div>
+                         <div className="p-4 bg-white/50 rounded-2xl border border-amber-200 text-[10px] text-amber-800 leading-relaxed italic">
+                           "The catalogue automatically prioritizes Featured products. Within those groups, items are sequenced by their manual Display Order. Inactive items remain hidden from customers."
+                         </div>
+                         <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10">
+                           Optimize Category Flow
+                         </button>
+                       </div>
+                    </div>
+
+                    {adminPreviewMode && (
+                      <div className="border-4 border-dashed border-amber-300 rounded-[3rem] p-4 bg-slate-50 animate-in slide-in-from-right-4">
+                         <p className="text-[10px] font-black text-center text-amber-500 uppercase mb-4 tracking-[0.3em]">Client View Simulation</p>
+                         <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                           {filteredProducts.map(p => (
+                             <div key={p.id} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                               <div className="flex gap-4">
+                                 <img src={p.image} className="w-20 h-20 rounded-2xl object-cover" alt="" />
+                                 <div>
+                                   <p className="text-sm font-black text-slate-900">{p.name}</p>
+                                   <div className="flex gap-2 mt-1">
+                                      {p.isFeatured && <span className="bg-amber-500 text-slate-900 text-[8px] px-2 py-0.5 rounded-full font-black">RECOMMENDED</span>}
+                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{p.category}</span>
+                                   </div>
+                                   <p className="text-sm font-bebas tracking-wide text-amber-600 mt-2">{formatPrice(p.price)}</p>
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'partners' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-bebas tracking-wide text-slate-800 uppercase">Network Partners</h3>
+                </div>
+                <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
+                   <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Partner Identity</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Logistics Capacity</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Financials</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {partners.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-8">
+                            <p className="font-black text-slate-900 text-lg uppercase tracking-tight">{p.name}</p>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1">
+                              <MapPin size={10} /> {p.location}
+                            </p>
+                          </td>
+                          <td className="p-8">
+                             <p className="text-sm font-bold text-slate-700">Fleet: {p.activeFleetCount} Vehicles</p>
+                             <p className="text-[10px] text-slate-400 font-black uppercase mt-1">Capacity: {p.productionCapacity.toLocaleString()} Units/Day</p>
+                          </td>
+                          <td className="p-8">
+                             <p className="text-sm font-black text-slate-900">{formatPrice(p.revenueGenerated)}</p>
+                             <p className="text-[10px] text-green-600 font-black uppercase mt-1">Sub Fee: {formatPrice(p.subscriptionFee)}</p>
+                          </td>
+                          <td className="p-8 text-center">
+                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              p.status === 'APPROVED' ? 'bg-green-100 text-green-700' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="p-8 text-right">
+                             <div className="flex justify-end gap-2">
+                               {p.status === 'PENDING' && (
+                                 <button onClick={() => handleUpdatePartnerStatus(p.id, 'APPROVED')} className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-100"><Check size={18} /></button>
+                               )}
+                               <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100"><Eye size={18} /></button>
+                               <button className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100"><Ban size={18} /></button>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                   </table>
                 </div>
               </div>
             )}

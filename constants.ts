@@ -18,7 +18,8 @@ export const PRODUCTS: Product[] = [
       strength: '3.5 N/mm²'
     },
     isActive: true,
-    isFeatured: true
+    isFeatured: true,
+    displayOrder: 1
   },
   {
     id: '2',
@@ -36,7 +37,8 @@ export const PRODUCTS: Product[] = [
       strength: '5.0 N/mm²'
     },
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    displayOrder: 2
   },
   {
     id: '3',
@@ -54,7 +56,8 @@ export const PRODUCTS: Product[] = [
       strength: '7.5 N/mm²'
     },
     isActive: true,
-    isFeatured: true
+    isFeatured: true,
+    displayOrder: 3
   },
   {
     id: '4',
@@ -72,7 +75,8 @@ export const PRODUCTS: Product[] = [
       strength: '40 N/mm²'
     },
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    displayOrder: 4
   },
   {
     id: '5',
@@ -90,7 +94,8 @@ export const PRODUCTS: Product[] = [
       strength: '2.5 N/mm²'
     },
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    displayOrder: 5
   },
   {
     id: '6',
@@ -108,7 +113,8 @@ export const PRODUCTS: Product[] = [
       strength: '3.5 N/mm²'
     },
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    displayOrder: 6
   },
   {
     id: '7',
@@ -126,7 +132,8 @@ export const PRODUCTS: Product[] = [
       strength: '45 N/mm²'
     },
     isActive: true,
-    isFeatured: false
+    isFeatured: false,
+    displayOrder: 7
   },
   {
     id: 'c1',
@@ -144,7 +151,8 @@ export const PRODUCTS: Product[] = [
       strength: '42.5 N/mm²'
     },
     isActive: true,
-    isFeatured: true
+    isFeatured: true,
+    displayOrder: 8
   }
 ];
 
