@@ -218,7 +218,7 @@ const App: React.FC = () => {
     setProductList(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
     setEditingProduct(null);
     setIsCameraActive(false);
-    addNotification('success', 'Catalogue Updated', `${updatedProduct.name} has been updated.`);
+    addNotification('success', 'Catalogue Updated', `${updatedProduct.name} has been updated in the network.`);
   };
 
   const handleAddProduct = (newProduct: Product) => {
@@ -582,7 +582,31 @@ const App: React.FC = () => {
                       {productList.map(p => (
                         <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-8">
-                            <img src={p.image} className="w-24 h-24 rounded-3xl object-cover border border-slate-100 shadow-sm" alt={p.name} />
+                            <div className="relative group/img w-24 h-24">
+                              <img src={p.image} className="w-full h-full rounded-3xl object-cover border border-slate-100 shadow-sm" alt={p.name} />
+                              <button 
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = 'image/*';
+                                  input.onchange = (e: any) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        handleUpdateProduct({ ...p, image: reader.result as string });
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  };
+                                  input.click();
+                                }}
+                                className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-3xl text-white"
+                                title="Change Image"
+                              >
+                                <Upload size={18} />
+                              </button>
+                            </div>
                           </td>
                           <td className="p-8">
                             <p className="font-black text-slate-900 text-lg uppercase tracking-tight">{p.name}</p>
@@ -691,13 +715,16 @@ const App: React.FC = () => {
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                   <canvas ref={canvasRef} className="hidden" />
                 </div>
-                <input 
-                  type="text" 
-                  value={editingProduct.image} 
-                  onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 text-xs text-slate-400 font-bold" 
-                  placeholder="Or provide direct CDN URL link..."
-                />
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CDN Asset Link</label>
+                  <input 
+                    type="text" 
+                    value={editingProduct.image} 
+                    onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 text-xs text-slate-400 font-bold" 
+                    placeholder="Direct image URL..."
+                  />
+                </div>
               </div>
 
               <div className="space-y-8">
@@ -744,10 +771,16 @@ const App: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 mt-16">
               <button onClick={() => { stopCamera(); setEditingProduct(null); }} className="flex-1 bg-slate-100 py-6 rounded-3xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-200 transition-all active:scale-95">Discard Changes</button>
               <button 
-                onClick={() => editingProduct.id ? handleUpdateProduct(editingProduct) : handleAddProduct(editingProduct)} 
+                onClick={() => {
+                  if (editingProduct.id) {
+                    handleUpdateProduct(editingProduct);
+                  } else {
+                    handleAddProduct(editingProduct);
+                  }
+                }} 
                 className="flex-[2] bg-slate-900 py-6 rounded-3xl font-black text-[10px] uppercase tracking-widest text-white shadow-2xl shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                {editingProduct.id ? 'COMMIT UPDATE' : 'PROVISION UNIT TO NETWORK'}
+                {editingProduct.id ? 'COMMIT NETWORK UPDATE' : 'PROVISION UNIT TO NETWORK'}
                 <Check size={20} className="text-amber-500" />
               </button>
             </div>

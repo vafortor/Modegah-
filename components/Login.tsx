@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap } from 'lucide-react';
+import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap, Key, Shield } from 'lucide-react';
 import { UserRole, View } from '../types';
 import BlockIcon from './BlockIcon';
 
@@ -8,6 +8,8 @@ interface LoginProps {
   onLogin: (role: UserRole) => void;
   setView: (view: View) => void;
 }
+
+const MASTER_ADMIN_SECRET = 'MODEGAH_ROOT_ADMIN_2025';
 
 const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [activeTab, setActiveTab] = useState<UserRole>('CLIENT');
@@ -21,6 +23,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [adminToken, setAdminToken] = useState('');
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +37,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
 
       if (isSignUp) {
         if (!fullName || !phone || !username || !password) {
-          setError('Please fill in all fields to register.');
+          setError('Please fill in all required fields.');
           setIsLoading(false);
           return;
         }
+        
+        if (activeTab === 'ADMIN') {
+          if (!adminToken) {
+            setError('Admin Authorization Token is required for network registration.');
+            setIsLoading(false);
+            return;
+          }
+          if (adminToken !== MASTER_ADMIN_SECRET) {
+            setError('ACCESS DENIED: Invalid Authorization Token. Access attempt logged.');
+            setIsLoading(false);
+            return;
+          }
+        }
+
         setIsSuccess(true);
-        setTimeout(() => onLogin('CLIENT'), 1500);
+        setTimeout(() => onLogin(activeTab), 1500);
       } else {
         if (activeTab === 'ADMIN') {
           if (lowerUser === 'admin' && password === 'modegah_admin') {
@@ -93,6 +110,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
     }, 800);
   };
 
+  const handleTabChange = (role: UserRole) => {
+    setActiveTab(role);
+    setIsSignUp(false);
+    setError('');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-950">
       <div className="absolute inset-0 z-0">
@@ -125,26 +148,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 <CheckCircle2 size={48} />
               </div>
               <h2 className="text-2xl font-bebas text-white mb-2">WELCOME TO MODEGAH</h2>
-              <p className="text-slate-400 text-sm">Account created successfully. Redirecting...</p>
+              <p className="text-slate-400 text-sm">Account provisioned successfully. Redirecting to {activeTab} console...</p>
             </div>
           ) : (
             <>
               {!isSignUp && (
                 <div className="flex bg-slate-900/50 p-1 rounded-2xl mb-8 border border-white/5">
                   <button 
-                    onClick={() => setActiveTab('CLIENT')}
+                    onClick={() => handleTabChange('CLIENT')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'CLIENT' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     CUSTOMER
                   </button>
                   <button 
-                    onClick={() => setActiveTab('PARTNER')}
+                    onClick={() => handleTabChange('PARTNER')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'PARTNER' ? 'bg-amber-500 text-slate-900 shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     PARTNER
                   </button>
                   <button 
-                    onClick={() => setActiveTab('ADMIN')}
+                    onClick={() => handleTabChange('ADMIN')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'ADMIN' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     ADMIN
@@ -154,18 +177,22 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
 
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  {isSignUp ? <UserPlus size={18} className="text-amber-500" /> : activeTab === 'ADMIN' ? <ShieldAlert size={18} className="text-red-500" /> : <Lock size={18} className="text-amber-500" />} 
-                  {isSignUp ? 'Create Account' : activeTab === 'CLIENT' ? 'Customer Sign In' : activeTab === 'PARTNER' ? 'Partner Portal' : 'Administrator Login'}
+                  {isSignUp ? <UserPlus size={18} className={activeTab === 'ADMIN' ? "text-red-500" : "text-amber-500"} /> : activeTab === 'ADMIN' ? <ShieldAlert size={18} className="text-red-500" /> : <Lock size={18} className="text-amber-500" />} 
+                  {isSignUp ? (activeTab === 'ADMIN' ? 'Provision Admin' : 'Create Account') : activeTab === 'CLIENT' ? 'Customer Sign In' : activeTab === 'PARTNER' ? 'Partner Portal' : 'Administrator Login'}
                 </h2>
                 
-                {activeTab === 'CLIENT' && (
-                  <button 
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-[10px] font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest bg-amber-500/5 px-3 py-1.5 rounded-lg border border-amber-500/20"
-                  >
-                    {isSignUp ? 'BACK' : 'SIGN UP'}
-                  </button>
-                )}
+                <button 
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${
+                    isSignUp 
+                      ? 'text-slate-400 border-white/10 hover:text-white' 
+                      : activeTab === 'ADMIN'
+                        ? 'text-red-400 border-red-500/20 bg-red-500/5 hover:bg-red-500/10'
+                        : 'text-amber-500 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10'
+                  }`}
+                >
+                  {isSignUp ? 'BACK' : activeTab === 'ADMIN' ? 'PROVISION' : 'SIGN UP'}
+                </button>
               </div>
 
               <form onSubmit={handleAuth} className="space-y-5">
@@ -178,18 +205,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 {isSignUp && (
                   <>
                     <div className="animate-in slide-in-from-top-2 duration-300">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Legal Name</label>
                       <input 
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                        placeholder="Project Owner Name"
+                        placeholder={activeTab === 'ADMIN' ? "Authorized System Official" : "Project Manager Name"}
                         required
                       />
                     </div>
                     <div className="animate-in slide-in-from-top-2 duration-400">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Phone (MoMo)</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Phone (Contact)</label>
                       <input 
                         type="tel"
                         value={phone}
@@ -219,14 +246,39 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                   </div>
                 </div>
 
+                {isSignUp && activeTab === 'ADMIN' && (
+                  <div className="animate-in slide-in-from-top-2 duration-500 group/security">
+                    <div className="flex justify-between items-center mb-2 ml-1">
+                      <label className="block text-[10px] font-bold text-red-400 uppercase tracking-widest">Master Security Token</label>
+                      <Shield className="text-red-500 animate-pulse" size={14} />
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type="password"
+                        value={adminToken}
+                        onChange={(e) => setAdminToken(e.target.value)}
+                        className="w-full bg-slate-900/50 border border-red-500/30 rounded-xl px-4 py-3 pl-11 text-white outline-none focus:ring-2 focus:ring-red-500 transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)] group-hover/security:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                        placeholder="Security Token"
+                        required
+                      />
+                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500/50 group-focus-within/security:text-red-500 transition-colors" size={18} />
+                    </div>
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">
+                      * Demo Token: <span className="text-red-400/80">{MASTER_ADMIN_SECRET}</span>
+                    </p>
+                  </div>
+                )}
+
                 <div>
                    <div className="flex justify-between items-center mb-2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Security Password</label>
-                    {!isSignUp && activeTab === 'CLIENT' && (
+                    {!isSignUp && (
                       <button 
                         type="button"
                         onClick={() => setView(View.FORGOT_PASSWORD)}
-                        className="text-[9px] font-black text-amber-500 hover:text-white uppercase tracking-widest transition-colors"
+                        className={`text-[9px] font-black uppercase tracking-widest transition-colors ${
+                          activeTab === 'ADMIN' ? 'text-red-400 hover:text-white' : 'text-amber-500 hover:text-white'
+                        }`}
                       >
                         Forgot Access?
                       </button>
@@ -260,7 +312,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                     <Loader2 size={20} className="animate-spin" />
                   ) : (
                     <>
-                      {isSignUp ? 'REGISTER ACCOUNT' : 'SECURE ACCESS'} 
+                      {isSignUp ? (activeTab === 'ADMIN' ? 'PROVISION ADMIN ACCESS' : 'REGISTER ACCOUNT') : 'SECURE ACCESS'} 
                       <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
