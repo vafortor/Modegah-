@@ -2,8 +2,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const SYSTEM_INSTRUCTION = `You are the Modegah AI Assistant, an expert in construction materials for Modegah Block Factory in Ghana. 
 
 Our standard block sizing uses a 400mm x 200mm face.
@@ -19,7 +17,10 @@ IMPORTANT: Delivery is ONLY available within the Greater Accra Region. Outside t
 Provide professional advice on quantities and material selection. Use GH₵ as the primary currency.
 Use the googleSearch tool to provide up-to-date information on cement prices (GHACEM, Dangote) and construction trends in Ghana if the user asks.`;
 
+// Using a world-class senior frontend engineer approach to interact with Gemini API
 export const getGeminiResponse = async (history: ChatMessage[]) => {
+  // Initialize AI client inside the function to ensure it always uses the most up-to-date API key
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const contents = history.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
@@ -36,10 +37,11 @@ export const getGeminiResponse = async (history: ChatMessage[]) => {
       },
     });
 
+    // Access the text property directly as per modern GenAI SDK guidelines
     const text = response.text;
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     
-    // If search was used, append sources
+    // If search was used, extract URLs from groundingChunks and append as sources for compliance
     let sources = "";
     if (groundingChunks && groundingChunks.length > 0) {
       sources = "\n\n**Sources:**\n" + groundingChunks

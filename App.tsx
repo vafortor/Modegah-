@@ -19,7 +19,8 @@ import ReceiptModal from './components/ReceiptModal';
 import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus, UserProfile, NotificationSettings } from './types';
 import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS } from './constants';
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical } from 'lucide-react';
+// Added Factory to imports to resolve the missing component reference error
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical, User, Briefcase, Zap, Crown, Factory } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,6 +62,7 @@ const App: React.FC = () => {
 
   // Admin Customization State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [adminTab, setAdminTab] = useState<'overview' | 'products' | 'partners' | 'catalogue_designer'>('overview');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -145,7 +147,6 @@ const App: React.FC = () => {
       const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
       
-      // Calculate bulk discount
       let bulkDiscountPct = 0;
       if (totalQty >= 5000) bulkDiscountPct = 0.07;
       else if (totalQty >= 1000) bulkDiscountPct = 0.03;
@@ -192,16 +193,12 @@ const App: React.FC = () => {
       return matchesCategory && matchesSearch && isVisible;
     });
     
-    // Sort Featured items first, then by option (including manual sequence)
     result.sort((a, b) => {
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
-      
       if (sortOption === 'price-low') return a.price - b.price;
       if (sortOption === 'price-high') return b.price - a.price;
       if (sortOption === 'rating') return b.averageRating - a.averageRating;
-      
-      // Default to manual sequence
       return a.displayOrder - b.displayOrder;
     });
     
@@ -281,9 +278,15 @@ const App: React.FC = () => {
     addNotification('success', 'Bulk Update Complete', `All catalogue prices adjusted by ${bulkAdjustmentPct}%.`);
   };
 
+  const handleUpdatePartner = (updatedPartner: Partner) => {
+    setPartners(prev => prev.map(p => p.id === updatedPartner.id ? updatedPartner : p));
+    setEditingPartner(null);
+    addNotification('success', 'Partner Profile Updated', `${updatedPartner.name} has been updated in the network.`);
+  };
+
   const handleUpdatePartnerStatus = (partnerId: string, status: PartnerStatus) => {
     setPartners(prev => prev.map(p => p.id === partnerId ? { ...p, status } : p));
-    addNotification('info', 'Partner Updated', `Partner status changed to ${status}.`);
+    addNotification('info', 'Partner Status Shift', `Network status changed to ${status}.`);
   };
 
   const handleAddReview = (productId: string, rating: number, comment: string, userName: string) => {
@@ -770,11 +773,8 @@ const App: React.FC = () => {
                             <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[9px] font-black uppercase">Always Active</span>
                          </div>
                          <div className="p-4 bg-white/50 rounded-2xl border border-amber-200 text-[10px] text-amber-800 leading-relaxed italic">
-                           "The catalogue automatically prioritizes Featured products. Within those groups, items are sequenced by their manual Display Order. Inactive items remain hidden from customers."
+                           "The catalogue automatically prioritizes Featured products. Within those groups, items are sequenced by their manual Display Order."
                          </div>
-                         <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10">
-                           Optimize Category Flow
-                         </button>
                        </div>
                     </div>
 
@@ -788,10 +788,6 @@ const App: React.FC = () => {
                                  <img src={p.image} className="w-20 h-20 rounded-2xl object-cover" alt="" />
                                  <div>
                                    <p className="text-sm font-black text-slate-900">{p.name}</p>
-                                   <div className="flex gap-2 mt-1">
-                                      {p.isFeatured && <span className="bg-amber-500 text-slate-900 text-[8px] px-2 py-0.5 rounded-full font-black">RECOMMENDED</span>}
-                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{p.category}</span>
-                                   </div>
                                    <p className="text-sm font-bebas tracking-wide text-amber-600 mt-2">{formatPrice(p.price)}</p>
                                  </div>
                                </div>
@@ -808,14 +804,14 @@ const App: React.FC = () => {
             {adminTab === 'partners' && (
               <div className="space-y-8 animate-in fade-in duration-500">
                 <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-2xl font-bebas tracking-wide text-slate-800 uppercase">Network Partners</h3>
+                  <h3 className="text-2xl font-bebas tracking-wide text-slate-800 uppercase">Network Partners Control</h3>
                 </div>
                 <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
                    <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Partner Identity</th>
-                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Logistics Capacity</th>
+                        <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Tier & Logistics</th>
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">Financials</th>
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
                         <th className="p-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Actions</th>
@@ -831,27 +827,42 @@ const App: React.FC = () => {
                             </p>
                           </td>
                           <td className="p-8">
-                             <p className="text-sm font-bold text-slate-700">Fleet: {p.activeFleetCount} Vehicles</p>
-                             <p className="text-[10px] text-slate-400 font-black uppercase mt-1">Capacity: {p.productionCapacity.toLocaleString()} Units/Day</p>
+                             <div className="flex items-center gap-2 mb-1">
+                               <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                 p.tier === 'enterprise' ? 'bg-purple-100 text-purple-700' : p.tier === 'premium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
+                               }`}>
+                                 {p.tier}
+                               </span>
+                               <p className="text-xs font-bold text-slate-600">{p.activeFleetCount} Fleet Units</p>
+                             </div>
+                             <p className="text-[10px] text-slate-400 font-black uppercase">Capacity: {p.productionCapacity.toLocaleString()} / Day</p>
                           </td>
                           <td className="p-8">
                              <p className="text-sm font-black text-slate-900">{formatPrice(p.revenueGenerated)}</p>
-                             <p className="text-[10px] text-green-600 font-black uppercase mt-1">Sub Fee: {formatPrice(p.subscriptionFee)}</p>
+                             <p className="text-[10px] text-green-600 font-black uppercase mt-1">Fee: {formatPrice(p.subscriptionFee)}</p>
                           </td>
                           <td className="p-8 text-center">
-                            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              p.status === 'APPROVED' ? 'bg-green-100 text-green-700' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                            }`}>
+                            <button 
+                              onClick={() => handleUpdatePartnerStatus(p.id, p.status === 'APPROVED' ? 'REJECTED' : 'APPROVED')}
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                                p.status === 'APPROVED' ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-700' : p.status === 'PENDING' ? 'bg-amber-100 text-amber-700 hover:bg-green-50' : 'bg-red-100 text-red-700 hover:bg-green-50'
+                              }`}
+                            >
                               {p.status}
-                            </span>
+                            </button>
                           </td>
                           <td className="p-8 text-right">
                              <div className="flex justify-end gap-2">
-                               {p.status === 'PENDING' && (
-                                 <button onClick={() => handleUpdatePartnerStatus(p.id, 'APPROVED')} className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-100"><Check size={18} /></button>
-                               )}
-                               <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100"><Eye size={18} /></button>
-                               <button className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100"><Ban size={18} /></button>
+                               <button 
+                                onClick={() => setEditingPartner(p)}
+                                className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+                                title="Edit Partner Profile"
+                               >
+                                 <Edit3 size={18} />
+                               </button>
+                               <button className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
+                                 <Ban size={18} />
+                               </button>
                              </div>
                           </td>
                         </tr>
@@ -942,6 +953,105 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* Partner Edit Modal */}
+      {editingPartner && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setEditingPartner(null)} />
+          <div className="relative w-full max-w-2xl bg-white rounded-[3rem] p-12 shadow-2xl animate-in zoom-in duration-300">
+             <div className="flex justify-between items-center mb-10">
+               <h3 className="text-4xl font-bebas text-slate-900 uppercase">Manage <span className="text-amber-500">Partner Node</span></h3>
+               <button onClick={() => setEditingPartner(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={24} /></button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Entity Name</label>
+                    <div className="relative">
+                      <input 
+                        value={editingPartner.name} 
+                        onChange={e => setEditingPartner({...editingPartner, name: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 font-bold text-slate-800"
+                      />
+                      <Building2 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Operational Tier</label>
+                    <select 
+                      value={editingPartner.tier}
+                      onChange={e => setEditingPartner({...editingPartner, tier: e.target.value as any})}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none font-bold text-slate-800"
+                    >
+                      <option value="standard">Standard Node</option>
+                      <option value="premium">Premium Node</option>
+                      <option value="enterprise">Enterprise Node</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Fleet Count</label>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        value={editingPartner.activeFleetCount} 
+                        onChange={e => setEditingPartner({...editingPartner, activeFleetCount: parseInt(e.target.value)})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 font-bold text-slate-800"
+                      />
+                      <Truck className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Production Cap (Units/Day)</label>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        value={editingPartner.productionCapacity} 
+                        onChange={e => setEditingPartner({...editingPartner, productionCapacity: parseInt(e.target.value)})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 font-bold text-slate-800"
+                      />
+                      <Factory className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    </div>
+                  </div>
+                </div>
+             </div>
+
+             <div className="p-6 bg-slate-900 rounded-[2rem] border border-white/5 mb-10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-slate-900">
+                      <ShieldCheck size={24} />
+                   </div>
+                   <div>
+                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Network Verification</p>
+                     <p className="text-white font-bold">Node Identity Status: {editingPartner.status}</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setEditingPartner({...editingPartner, status: editingPartner.status === 'APPROVED' ? 'REJECTED' : 'APPROVED'})}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    editingPartner.status === 'APPROVED' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                  }`}
+                >
+                  {editingPartner.status === 'APPROVED' ? 'Suspend Node' : 'Authorize Node'}
+                </button>
+             </div>
+
+             <div className="flex gap-4">
+                <button onClick={() => setEditingPartner(null)} className="flex-1 bg-slate-100 py-6 rounded-3xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-200">Discard</button>
+                <button 
+                  onClick={() => handleUpdatePartner(editingPartner)}
+                  className="flex-[2] bg-slate-900 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-900/10 hover:bg-slate-800 flex items-center justify-center gap-2"
+                >
+                  Update Global Record <Check size={18} className="text-amber-500" />
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Edit Modal */}
       {editingProduct && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8">
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => { stopCamera(); setEditingProduct(null); }} />

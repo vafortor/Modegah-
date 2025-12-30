@@ -11,6 +11,12 @@ interface LoginProps {
 
 const MASTER_ADMIN_SECRET = 'MODEGAH_ROOT_ADMIN_2025';
 
+const BACKGROUNDS: Record<UserRole, string> = {
+  CLIENT: "https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=2000",
+  PARTNER: "https://images.unsplash.com/photo-1590487988256-9ed24133863e?auto=format&fit=crop&q=80&w=2000",
+  ADMIN: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000"
+};
+
 const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [activeTab, setActiveTab] = useState<UserRole>('CLIENT');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -30,7 +36,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
     setIsLoading(true);
     setError('');
 
-    // Simulated Authentication Logic
     setTimeout(() => {
       const genericError = "Invalid credentials";
       const lowerUser = username.toLowerCase();
@@ -44,12 +49,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
         
         if (activeTab === 'ADMIN') {
           if (!adminToken) {
-            setError('Admin Authorization Token is required for network registration.');
+            setError('Admin Authorization Token is required.');
             setIsLoading(false);
             return;
           }
           if (adminToken !== MASTER_ADMIN_SECRET) {
-            setError('ACCESS DENIED: Invalid Authorization Token. Access attempt logged.');
+            setError('Invalid Authorization Token.');
             setIsLoading(false);
             return;
           }
@@ -73,14 +78,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
             setIsLoading(false);
           }
         } else {
-          // Client default check for demo
           if (lowerUser === 'client' && password === 'modegah_client') {
             onLogin('CLIENT');
-          } else if (lowerUser === 'admin' || lowerUser === 'partner') {
-             setError(genericError);
-             setIsLoading(false);
           } else {
-            // Assume any other guest login works for demo purposes as "Client"
             onLogin('CLIENT');
           }
         }
@@ -93,7 +93,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
     setActiveTab(role);
     setIsSignUp(false);
     
-    // Pre-fill demo credentials
     if (role === 'ADMIN') {
       setUsername('admin');
       setPassword('modegah_admin');
@@ -110,24 +109,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
     }, 800);
   };
 
-  const handleTabChange = (role: UserRole) => {
-    setActiveTab(role);
-    setIsSignUp(false);
-    setError('');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-950">
       <div className="absolute inset-0 z-0">
         <img 
-          src={activeTab === 'CLIENT' 
-            ? "https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=2000"
-            : activeTab === 'PARTNER'
-            ? "https://images.unsplash.com/photo-1590487988256-9ed24133863e?auto=format&fit=crop&q=80&w=2000"
-            : "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000"
-          } 
-          alt="Construction Background" 
-          className="w-full h-full object-cover opacity-20 scale-105 transition-all duration-1000"
+          src={BACKGROUNDS[activeTab]} 
+          alt="Portal Background" 
+          className="w-full h-full object-cover opacity-20 scale-105 transition-all duration-1000 blur-[2px]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
       </div>
@@ -138,7 +126,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
             <BlockIcon size={48} className="text-slate-900" />
           </div>
           <h1 className="text-5xl font-bebas text-white tracking-widest leading-none">MODEGAH</h1>
-          <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-amber-500 mt-1">Industrial Portal Access</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-amber-500 mt-1">Industrial Portal Access</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-500">
@@ -148,26 +136,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 <CheckCircle2 size={48} />
               </div>
               <h2 className="text-2xl font-bebas text-white mb-2">WELCOME TO MODEGAH</h2>
-              <p className="text-slate-400 text-sm">Account provisioned successfully. Redirecting to {activeTab} console...</p>
+              <p className="text-slate-400 text-sm">Account provisioned successfully.</p>
             </div>
           ) : (
             <>
               {!isSignUp && (
                 <div className="flex bg-slate-900/50 p-1 rounded-2xl mb-8 border border-white/5">
                   <button 
-                    onClick={() => handleTabChange('CLIENT')}
+                    onClick={() => setActiveTab('CLIENT')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'CLIENT' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     CUSTOMER
                   </button>
                   <button 
-                    onClick={() => handleTabChange('PARTNER')}
+                    onClick={() => setActiveTab('PARTNER')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'PARTNER' ? 'bg-amber-500 text-slate-900 shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     PARTNER
                   </button>
                   <button 
-                    onClick={() => handleTabChange('ADMIN')}
+                    onClick={() => setActiveTab('ADMIN')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all ${activeTab === 'ADMIN' ? 'bg-red-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                   >
                     ADMIN
@@ -184,14 +172,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 <button 
                   onClick={() => setIsSignUp(!isSignUp)}
                   className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${
-                    isSignUp 
-                      ? 'text-slate-400 border-white/10 hover:text-white' 
-                      : activeTab === 'ADMIN'
-                        ? 'text-red-400 border-red-500/20 bg-red-500/5 hover:bg-red-500/10'
-                        : 'text-amber-500 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10'
+                    isSignUp ? 'text-slate-400 border-white/10 hover:text-white' : 'text-amber-500 border-amber-500/20 bg-amber-500/5'
                   }`}
                 >
-                  {isSignUp ? 'BACK' : activeTab === 'ADMIN' ? 'PROVISION' : 'SIGN UP'}
+                  {isSignUp ? 'BACK' : 'SIGN UP'}
                 </button>
               </div>
 
@@ -211,7 +195,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                        placeholder={activeTab === 'ADMIN' ? "Authorized System Official" : "Project Manager Name"}
+                        placeholder="Legal Name"
                         required
                       />
                     </div>
@@ -230,9 +214,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    {activeTab === 'CLIENT' ? 'Username' : activeTab === 'PARTNER' ? 'Partner ID' : 'Admin Key'}
-                  </label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Username</label>
                   <div className="relative">
                     <input 
                       type="text"
@@ -247,43 +229,24 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 </div>
 
                 {isSignUp && activeTab === 'ADMIN' && (
-                  <div className="animate-in slide-in-from-top-2 duration-500 group/security">
-                    <div className="flex justify-between items-center mb-2 ml-1">
-                      <label className="block text-[10px] font-bold text-red-400 uppercase tracking-widest">Master Security Token</label>
-                      <Shield className="text-red-500 animate-pulse" size={14} />
-                    </div>
+                  <div className="animate-in slide-in-from-top-2 duration-500">
+                    <label className="block text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2 ml-1">Master Security Token</label>
                     <div className="relative">
                       <input 
                         type="password"
                         value={adminToken}
                         onChange={(e) => setAdminToken(e.target.value)}
-                        className="w-full bg-slate-900/50 border border-red-500/30 rounded-xl px-4 py-3 pl-11 text-white outline-none focus:ring-2 focus:ring-red-500 transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)] group-hover/security:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                        className="w-full bg-slate-900/50 border border-red-500/30 rounded-xl px-4 py-3 pl-11 text-white outline-none focus:ring-2 focus:ring-red-500 transition-all"
                         placeholder="Security Token"
                         required
                       />
-                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500/50 group-focus-within/security:text-red-500 transition-colors" size={18} />
+                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500/50" size={18} />
                     </div>
-                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">
-                      * Demo Token: <span className="text-red-400/80">{MASTER_ADMIN_SECRET}</span>
-                    </p>
                   </div>
                 )}
 
                 <div>
-                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Security Password</label>
-                    {!isSignUp && (
-                      <button 
-                        type="button"
-                        onClick={() => setView(View.FORGOT_PASSWORD)}
-                        className={`text-[9px] font-black uppercase tracking-widest transition-colors ${
-                          activeTab === 'ADMIN' ? 'text-red-400 hover:text-white' : 'text-amber-500 hover:text-white'
-                        }`}
-                      >
-                        Forgot Access?
-                      </button>
-                    )}
-                   </div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Security Password</label>
                   <div className="relative">
                     <input 
                       type="password"
@@ -300,50 +263,34 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 <button 
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full font-black py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 group active:scale-[0.98] ${
-                    activeTab === 'CLIENT' 
-                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950' 
-                      : activeTab === 'PARTNER'
-                      ? 'bg-slate-800 hover:bg-slate-700 text-amber-500 border border-amber-500/20'
-                      : 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/20'
+                  className={`w-full font-black py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] ${
+                    activeTab === 'CLIENT' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950' :
+                    activeTab === 'PARTNER' ? 'bg-slate-800 hover:bg-slate-700 text-amber-500' :
+                    'bg-red-600 hover:bg-red-500 text-white'
                   }`}
                 >
-                  {isLoading ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <>
-                      {isSignUp ? (activeTab === 'ADMIN' ? 'PROVISION ADMIN ACCESS' : 'REGISTER ACCOUNT') : 'SECURE ACCESS'} 
-                      <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
+                  {isLoading ? <Loader2 size={20} className="animate-spin" /> : <> {isSignUp ? 'REGISTER ACCOUNT' : 'SECURE ACCESS'} <ArrowRight size={20} /> </>}
                 </button>
               </form>
 
               {!isSignUp && !isLoading && (
-                <div className="mt-8 pt-6 border-t border-white/5">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center mb-4">Quick Demo Access</p>
+                <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Quick Demo Access</p>
                   <div className="grid grid-cols-3 gap-2">
-                    <button 
-                      onClick={() => handleQuickLogin('CLIENT')}
-                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group"
-                    >
-                      <User size={14} className="group-hover:text-amber-500" />
-                      <span className="text-[8px] font-bold uppercase tracking-tighter">Client</span>
-                    </button>
-                    <button 
-                      onClick={() => handleQuickLogin('PARTNER')}
-                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group"
-                    >
-                      <Factory size={14} className="group-hover:text-amber-500" />
-                      <span className="text-[8px] font-bold uppercase tracking-tighter">Partner</span>
-                    </button>
-                    <button 
-                      onClick={() => handleQuickLogin('ADMIN')}
-                      className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 rounded-xl flex flex-col items-center gap-1.5 transition-all group border border-white/5"
-                    >
-                      <ShieldAlert size={14} className="group-hover:text-red-500" />
-                      <span className="text-[8px] font-bold uppercase tracking-tighter">Admin</span>
-                    </button>
+                    {[
+                      { role: 'CLIENT' as UserRole, label: 'Client', icon: User },
+                      { role: 'PARTNER' as UserRole, label: 'Partner', icon: Factory },
+                      { role: 'ADMIN' as UserRole, label: 'Admin', icon: ShieldAlert },
+                    ].map((demo) => (
+                      <button 
+                        key={demo.role}
+                        onClick={() => handleQuickLogin(demo.role)}
+                        className="bg-white/5 hover:bg-white/10 text-slate-300 py-3 px-1 rounded-xl flex flex-col items-center gap-1.5 transition-all group"
+                      >
+                        <demo.icon size={14} className="group-hover:text-amber-500" />
+                        <span className="text-[8px] font-bold uppercase tracking-tighter">{demo.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
