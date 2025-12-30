@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Instagram, Facebook, Twitter, Search, X, Package, Loader2, Truck, ShieldCheck, Info, Map, Clock, Building2, Award, ChevronUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, Twitter, Search, X, Package, Loader2, Truck, ShieldCheck, Info, Map, Clock, Building2, Award, ChevronUp, AlertCircle, CheckCircle2, MessageCircle } from 'lucide-react';
 import BlockIcon from './BlockIcon';
 import { View, Order } from '../types';
 
@@ -17,6 +17,11 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
   const [activePolicy, setActivePolicy] = useState<null | 'delivery' | 'returns'>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Constants for WhatsApp integration
+  const WHATSAPP_NUMBER = "233248279518"; 
+  const WHATSAPP_MESSAGE = encodeURIComponent("Hello Modegah Block Factory, I'm interested in inquiring about structural blocks for my project.");
+  const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,7 +84,10 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
             <p className="text-sm leading-relaxed">
               Ghana's premier high-vibration block factory and certified partner network. Setting the benchmark for construction durability.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
+              <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-800 rounded-lg hover:bg-[#25D366] hover:text-white transition-all shadow-lg" title="Chat on WhatsApp">
+                <MessageCircle size={18} fill="currentColor" />
+              </a>
               <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-amber-500 hover:text-slate-900 transition-all"><Instagram size={18} /></a>
               <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-amber-500 hover:text-slate-900 transition-all"><Facebook size={18} /></a>
               <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-amber-500 hover:text-slate-900 transition-all"><Twitter size={18} /></a>
@@ -90,7 +98,7 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
             <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-xs">Quick Links</h4>
             <ul className="space-y-4 text-sm">
               <li>
-                <button onClick={() => handleNavigate(View.SHOP)} className="hover:text-amber-500 transition-colors text-left">
+                <button onClick={() => handleNavigate(View.SHOP)} className="hover:text-amber-500 transition-colors text-left font-bold">
                   Our Products
                 </button>
               </li>
@@ -123,7 +131,11 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
               <li><button onClick={onOpenChat} className="hover:text-amber-500 transition-colors text-left">Help Center</button></li>
               <li><button onClick={() => setActivePolicy('delivery')} className="hover:text-amber-500 transition-colors text-left">Delivery Policy</button></li>
               <li><button onClick={() => setActivePolicy('returns')} className="hover:text-amber-500 transition-colors text-left">Return Policy</button></li>
-              <li><button onClick={onOpenChat} className="hover:text-amber-500 transition-colors text-left">AI Assistant</button></li>
+              <li>
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-green-500 font-bold hover:text-green-400 transition-colors flex items-center gap-2">
+                  <MessageCircle size={16} /> WhatsApp Support
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -131,14 +143,24 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
             <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-xs">Contact Us</h4>
             <ul className="space-y-4 text-sm">
               <li className="flex items-center gap-3"><MapPin size={16} className="text-amber-500" /> Afienyah, Shai Hills Ghana Industrial Area</li>
-              <li className="flex items-center gap-3"><Phone size={16} className="text-amber-500" /> +233 800 MODEGAH</li>
-              <li className="flex items-center gap-3"><Mail size={16} className="text-amber-500" /> sales@modegah.com</li>
+              <li className="flex items-center gap-3">
+                <Phone size={16} className="text-amber-500" /> 
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 transition-colors font-bold">
+                  +233 248279518 (Chat)
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail size={16} className="text-amber-500" /> 
+                <a href="mailto:sales@modegah.com" className="hover:text-amber-500 transition-colors">
+                  sales@modegah.com
+                </a>
+              </li>
             </ul>
           </div>
         </div>
         
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium">
-          <p>© {new Date().getFullYear()} Modegah Block Factory Ltd. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} Ghit Ltd. All Rights Reserved.</p>
           <div className="flex gap-8">
             <button onClick={() => handleNavigate(View.PRIVACY)} className="hover:text-white transition-colors">Privacy Policy</button>
             <button onClick={() => handleNavigate(View.TERMS)} className="hover:text-white transition-colors">Terms of Service</button>
@@ -258,7 +280,7 @@ const Footer: React.FC<FooterProps> = ({ setView, onOpenChat, orders }) => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={closePolicy} />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
-            <div className="bg-slate-900 p-6 flex items-center justify-between text-white flex-shrink-0">
+            <div className="bg-slate-900 p-6 flex items-center justify-between text-white flex-shrink-0 print:hidden">
               <div className="flex items-center gap-3">
                 {activePolicy === 'delivery' ? (
                   <Truck className="text-amber-500" />
