@@ -20,7 +20,8 @@ import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus, UserProfile, NotificationSettings } from './types';
 import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS, GITHUB_ASSET_BASE } from './constants';
 import { editImageWithGemini } from './services/imageEditorService';
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical, User, Briefcase, Zap, Crown, Factory, Shield, AlertTriangle, Wand2, Sparkles, Github } from 'lucide-react';
+// Added Activity to the imports
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical, User, Briefcase, Zap, Crown, Factory, Shield, AlertTriangle, Wand2, Sparkles, Github, Rocket, CheckCircle, Activity } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -357,8 +358,6 @@ const App: React.FC = () => {
   const handleGitHubAssetSync = () => {
     if (!editingProduct) return;
     const current = editingProduct.image;
-    // If it's already a full URL or base64, we just let them type the filename
-    // Actually, let's just make it a toggle or a button that prepends if not present
     if (current && !current.startsWith('http') && !current.startsWith('data:')) {
       setEditingProduct({
         ...editingProduct,
@@ -636,6 +635,70 @@ const App: React.FC = () => {
 
             {adminTab === 'overview' && (
               <div className="space-y-12">
+                {/* PRODUCTION READINESS TRACKER */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 bg-slate-900 rounded-[3rem] p-10 border border-white/10 relative overflow-hidden shadow-2xl">
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-amber-500 p-3 rounded-2xl text-slate-900">
+                             <Rocket size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bebas text-white tracking-wide">Launch <span className="text-amber-500">Readiness Tracker</span></h3>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Prototype to Production Bridge</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                           <p className="text-4xl font-bebas text-amber-500">65%</p>
+                           <p className="text-[9px] font-black text-slate-500 uppercase">Operational Health</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                        {[
+                          { label: 'UI/UX Visual Identity', status: 'ready' },
+                          { label: 'Calculators & Logic', status: 'ready' },
+                          { label: 'Mock Order Routing', status: 'ready' },
+                          { label: 'Cloud Database (Persistent)', status: 'pending' },
+                          { label: 'Secure Auth (Supabase/Firebase)', status: 'pending' },
+                          { label: 'MoMo Payment Integration', status: 'pending' },
+                        ].map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:bg-white/10 transition-all">
+                             <span className="text-xs font-bold text-slate-300">{item.label}</span>
+                             {item.status === 'ready' ? (
+                               <CheckCircle className="text-green-500" size={16} />
+                             ) : (
+                               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                             )}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-10 flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p className="text-[10px] text-slate-400 font-bold max-w-sm">Senior Note: The front-end is public-ready. Switch to a centralized database to enable real cross-device logins.</p>
+                        <button className="bg-amber-500 text-slate-900 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all">View Roadmap</button>
+                      </div>
+                    </div>
+                    <Activity className="absolute -bottom-10 -right-10 text-white/5" size={200} />
+                  </div>
+
+                  <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm flex flex-col justify-center">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">System Identity</h4>
+                    <div className="flex flex-col items-center text-center">
+                       <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-4 border border-amber-100">
+                          <ShieldCheck size={40} className="text-amber-500" />
+                       </div>
+                       <p className="text-2xl font-bebas text-slate-900 tracking-wide">PROTO-STAGING</p>
+                       <div className="flex items-center gap-2 mt-2 px-4 py-1.5 bg-slate-900 text-white rounded-full">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Local-Storage Logic Active</span>
+                       </div>
+                       <p className="mt-6 text-[10px] text-slate-500 font-medium leading-relaxed italic">"In production, identification will be managed via JWT tokens and secure cloud sessions."</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* ADMIN ACTION CENTER */}
                 {partners.some(p => p.status === 'PENDING') && (
                   <div className="bg-amber-50 border-2 border-amber-200 rounded-[3rem] p-10 animate-in slide-in-from-top-4">
@@ -1227,7 +1290,6 @@ const App: React.FC = () => {
                     <canvas ref={canvasRef} className="hidden" />
                   </div>
 
-                  {/* AI Refine Component */}
                   {editingProduct.image && (
                     <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-white/5 space-y-4 animate-in slide-in-from-bottom-4">
                        <div className="flex items-center gap-3 mb-2">

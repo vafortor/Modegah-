@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap, Key, Shield } from 'lucide-react';
+// Added Factory to the imports
+import { Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, UserPlus, ShieldAlert, Key, Shield, Info, Factory } from 'lucide-react';
 import { UserRole, View, UserProfile } from '../types';
 import BlockIcon from './BlockIcon';
 
@@ -66,7 +67,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
           return;
         }
 
-        // Check for duplicates
         if (accounts.some(acc => acc.username.toLowerCase() === lowerUser)) {
           setError('Username already exists in the network.');
           setIsLoading(false);
@@ -105,13 +105,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
         setIsSuccess(true);
         setTimeout(() => onLogin(activeTab, newProfile), 1500);
       } else {
-        // Authenticate
         const match = accounts.find(acc => acc.username.toLowerCase() === lowerUser && acc.password === password);
         
         if (match) {
           onLogin(match.role, match.profile);
         } else {
-          // Hardcoded Demos as Fallback
           if (activeTab === 'ADMIN' && lowerUser === 'admin' && password === 'modegah_admin') {
             onLogin('ADMIN');
           } else if (activeTab === 'PARTNER' && lowerUser === 'partner' && password === 'modegah_partner') {
@@ -335,6 +333,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
               )}
             </>
           )}
+        </div>
+        
+        <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+           <Info className="text-amber-500 shrink-0 mt-0.5" size={16} />
+           <p className="text-[10px] text-amber-200/70 font-medium leading-relaxed">
+             <span className="text-amber-500 font-black">DEMO ENVIRONMENT:</span> Accounts created here are stored in your browser's local memory. For production, these will be moved to a secure cloud database.
+           </p>
         </div>
       </div>
     </div>
