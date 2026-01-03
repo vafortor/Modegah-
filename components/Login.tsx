@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 // Added Factory to the imports
-import { Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, UserPlus, ShieldAlert, Key, Shield, Info, Factory } from 'lucide-react';
+import { Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, UserPlus, ShieldAlert, Key, Shield, Info, Factory, LifeBuoy } from 'lucide-react';
 import { UserRole, View, UserProfile } from '../types';
 import BlockIcon from './BlockIcon';
 
@@ -126,14 +126,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   };
 
   const handleQuickLogin = (role: UserRole) => {
+    if (role === 'ADMIN') return; // Forbid automated admin login for security
+    
     setIsLoading(true);
     setActiveTab(role);
     setIsSignUp(false);
     
-    if (role === 'ADMIN') {
-      setUsername('admin');
-      setPassword('modegah_admin');
-    } else if (role === 'PARTNER') {
+    if (role === 'PARTNER') {
       setUsername('partner');
       setPassword('modegah_partner');
     } else {
@@ -169,7 +168,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
         <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-500">
           {isSuccess ? (
             <div className="py-8 flex flex-col items-center text-center animate-in zoom-in duration-500">
-              <div className="w-20 h-20 bg-green-500 text-slate-950 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+              <div className="w-20 h-20 bg-green-500 text-slate-900 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
                 <CheckCircle2 size={48} />
               </div>
               <h2 className="text-2xl font-bebas text-white mb-2">WELCOME TO MODEGAH</h2>
@@ -308,16 +307,27 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 >
                   {isLoading ? <Loader2 size={20} className="animate-spin" /> : <> {isSignUp ? 'REGISTER ACCOUNT' : 'SECURE ACCESS'} <ArrowRight size={20} /> </>}
                 </button>
+
+                {!isSignUp && (
+                  <div className="text-center mt-2">
+                    <button 
+                      type="button"
+                      onClick={() => setView(View.FORGOT_PASSWORD)}
+                      className="text-[10px] font-black text-amber-500/60 hover:text-amber-500 uppercase tracking-widest flex items-center justify-center gap-2 mx-auto transition-colors"
+                    >
+                      <LifeBuoy size={14} /> Forgot security password?
+                    </button>
+                  </div>
+                )}
               </form>
 
               {!isSignUp && !isLoading && (
                 <div className="mt-8 pt-6 border-t border-white/5 text-center">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Quick Demo Access</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
                       { role: 'CLIENT' as UserRole, label: 'Client', icon: User },
                       { role: 'PARTNER' as UserRole, label: 'Partner', icon: Factory },
-                      { role: 'ADMIN' as UserRole, label: 'Admin', icon: ShieldAlert },
                     ].map((demo) => (
                       <button 
                         key={demo.role}
