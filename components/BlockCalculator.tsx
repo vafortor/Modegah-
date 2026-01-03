@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Calculator, Ruler, Layers, ChevronRight, Info, CheckCircle2, ShoppingCart, Package, Home, Building } from 'lucide-react';
 import { Product } from '../types';
@@ -20,7 +19,7 @@ const BlockCalculator: React.FC<BlockCalculatorProps> = ({ onAddToCart, cementPr
   const [mode, setMode] = useState<CalcMode>('manual');
   const [length, setLength] = useState<string>('10');
   const [height, setHeight] = useState<string>('3');
-  const [blockType, setBlockType] = useState<'4' | '5' | '6' | '8'>('6');
+  const [blockType, setBlockType] = useState<'5' | '6' | '8'>('6');
   const [selectedCementId, setSelectedCementId] = useState<string>(cementProducts[0]?.id || '');
   const [selectedHouseId, setSelectedHouseId] = useState<string>('3bed');
   
@@ -156,7 +155,7 @@ const BlockCalculator: React.FC<BlockCalculatorProps> = ({ onAddToCart, cementPr
                   <Layers size={16} className="text-amber-500" /> Structural Block Type
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {['4', '5', '6', '8'].map((size) => (
+                  {['5', '6', '8'].map((size) => (
                     <button
                       key={size}
                       onClick={() => setBlockType(size as any)}

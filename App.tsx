@@ -18,9 +18,9 @@ import LegalView from './components/LegalView';
 import ReceiptModal from './components/ReceiptModal';
 import NotificationTray from './components/NotificationTray';
 import { Product, CartItem, View, Currency, Review, Order, SortOption, UserRole, Notification, Partner, PartnerStatus, UserProfile, NotificationSettings } from './types';
-import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS } from './constants';
-// Added Factory to imports to resolve the missing component reference error
-import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical, User, Briefcase, Zap, Crown, Factory } from 'lucide-react';
+import { PRODUCTS, GHS_TO_USD_RATE, INITIAL_REVIEWS, INITIAL_ORDERS, SAMPLE_PARTNERS, GITHUB_ASSET_BASE } from './constants';
+import { editImageWithGemini } from './services/imageEditorService';
+import { ArrowRight, Star, ShieldCheck, Truck, Clock, RefreshCw, AlertCircle, LayoutGrid, Box, Grid3X3, Trees, Package, Building2, ArrowUpDown, ChevronDown, Filter, X, Search, Loader2, CreditCard, Award, Bell, ShieldAlert, BarChart3, Users, Globe, Edit3, Trash2, Check, Ban, Plus, CheckCircle2, DollarSign, Eye, EyeOff, TrendingUp, MapPin, Camera, Upload, Image as ImageIcon, RotateCcw, Heart, Trash, Copy, MoveUp, MoveDown, Layout, Settings2, GripVertical, User, Briefcase, Zap, Crown, Factory, Shield, AlertTriangle, Wand2, Sparkles, Github } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -69,6 +69,11 @@ const App: React.FC = () => {
   const [showBulkPriceModal, setShowBulkPriceModal] = useState(false);
   const [bulkAdjustmentPct, setBulkAdjustmentPct] = useState(0);
   const [adminPreviewMode, setAdminPreviewMode] = useState(false);
+  
+  // AI Image Lab State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [aiHistory, setAiHistory] = useState<string[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -198,7 +203,7 @@ const App: React.FC = () => {
       if (!a.isFeatured && b.isFeatured) return 1;
       if (sortOption === 'price-low') return a.price - b.price;
       if (sortOption === 'price-high') return b.price - a.price;
-      if (sortOption === 'rating') return b.averageRating - a.averageRating;
+      if (sortOption === 'rating') return a.averageRating - b.averageRating;
       return a.displayOrder - b.displayOrder;
     });
     
@@ -210,9 +215,12 @@ const App: React.FC = () => {
     return ['All', ...Array.from(cats)];
   }, [productList]);
 
-  const handleLoginSuccess = (role: UserRole) => {
+  const handleLoginSuccess = (role: UserRole, profile?: UserProfile) => {
     setUserRole(role);
     setIsAuthenticated(true);
+    if (profile) {
+      setUserProfile(profile);
+    }
     if (role === 'ADMIN') setView(View.ADMIN_DASHBOARD);
     else if (role === 'PARTNER') setView(View.PARTNER_DASHBOARD);
     else setView(View.HOME);
@@ -232,6 +240,8 @@ const App: React.FC = () => {
     setEditingProduct(null);
     setIsCameraActive(false);
     setIsUploading(false);
+    setAiPrompt('');
+    setAiHistory([]);
     addNotification('success', 'Catalogue Updated', `${updatedProduct.name} has been updated in the network.`);
   };
 
@@ -242,6 +252,8 @@ const App: React.FC = () => {
     setEditingProduct(null);
     setIsCameraActive(false);
     setIsUploading(false);
+    setAiPrompt('');
+    setAiHistory([]);
     addNotification('success', 'Product Added', `${newProduct.name} added to the catalogue.`);
   };
 
@@ -285,7 +297,12 @@ const App: React.FC = () => {
   };
 
   const handleUpdatePartnerStatus = (partnerId: string, status: PartnerStatus) => {
-    setPartners(prev => prev.map(p => p.id === partnerId ? { ...p, status } : p));
+    setPartners(prev => prev.map(p => {
+      if (p.id === partnerId) {
+        return { ...p, status };
+      }
+      return p;
+    }));
     addNotification('info', 'Partner Status Shift', `Network status changed to ${status}.`);
   };
 
@@ -315,6 +332,41 @@ const App: React.FC = () => {
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAiRefine = async () => {
+    if (!editingProduct?.image || !aiPrompt.trim()) return;
+    
+    setIsAiProcessing(true);
+    addNotification('info', 'AI Refinement', 'Gemini is reimagining your product visual...');
+    
+    try {
+      const result = await editImageWithGemini(editingProduct.image, aiPrompt);
+      setAiHistory(prev => [editingProduct.image, ...prev].slice(0, 5));
+      setEditingProduct({ ...editingProduct, image: result });
+      setAiPrompt('');
+      addNotification('success', 'Visual Enhanced', 'Product image refined via text prompt.');
+    } catch (err) {
+      addNotification('error', 'AI Processing Failed', 'Could not refine image. Check network connection.');
+    } finally {
+      setIsAiProcessing(false);
+    }
+  };
+
+  const handleGitHubAssetSync = () => {
+    if (!editingProduct) return;
+    const current = editingProduct.image;
+    // If it's already a full URL or base64, we just let them type the filename
+    // Actually, let's just make it a toggle or a button that prepends if not present
+    if (current && !current.startsWith('http') && !current.startsWith('data:')) {
+      setEditingProduct({
+        ...editingProduct,
+        image: `${GITHUB_ASSET_BASE}${current}`
+      });
+      addNotification('success', 'GitHub Sync', 'Base URL prepended to asset filename.');
+    } else if (!current) {
+        addNotification('warning', 'Empty Filename', 'Type the asset name (e.g. block.jpg) first.');
     }
   };
 
@@ -583,30 +635,74 @@ const App: React.FC = () => {
             </div>
 
             {adminTab === 'overview' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
-                  <BarChart3 className="text-blue-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
-                  <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Gross Volume</h3>
-                  <p className="text-4xl font-bebas text-slate-900">{formatPrice(totalAdminStats.revenue)}</p>
-                  <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Platform-wide Revenue</p>
-                </div>
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
-                  <DollarSign className="text-green-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
-                  <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Network Fees</h3>
-                  <p className="text-4xl font-bebas text-slate-900">{formatPrice(totalAdminStats.partnerFees)}</p>
-                  <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Monthly SaaS Revenue</p>
-                </div>
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
-                  <Users className="text-purple-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
-                  <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Active Partners</h3>
-                  <p className="text-4xl font-bebas text-slate-900">{totalAdminStats.activePartners}</p>
-                  <p className="text-[10px] text-amber-500 font-black mt-4 uppercase tracking-[0.2em]">{totalAdminStats.pendingPartners} Applications Pending</p>
-                </div>
-                <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
-                  <Package className="text-amber-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
-                  <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Global SKUs</h3>
-                  <p className="text-4xl font-bebas text-slate-900">{totalAdminStats.totalSKUs}</p>
-                  <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Live Catalogue Items</p>
+              <div className="space-y-12">
+                {/* ADMIN ACTION CENTER */}
+                {partners.some(p => p.status === 'PENDING') && (
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-[3rem] p-10 animate-in slide-in-from-top-4">
+                     <div className="flex items-center gap-4 mb-8">
+                        <div className="bg-amber-500 p-3 rounded-2xl text-slate-900">
+                          <AlertTriangle size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bebas tracking-wide text-slate-900">ACTION REQUIRED: <span className="text-amber-600">VERIFICATION QUEUE</span></h3>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">High Priority Network Oversight</p>
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {partners.filter(p => p.status === 'PENDING').map(p => (
+                          <div key={p.id} className="bg-white p-6 rounded-3xl border border-amber-100 shadow-lg shadow-amber-500/5 group hover:border-amber-400 transition-all">
+                             <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <p className="font-black text-slate-900 text-lg">{p.name}</p>
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter flex items-center gap-1 mt-1"><MapPin size={10} /> {p.location}</p>
+                                </div>
+                                <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-1 rounded-full uppercase">Pending</span>
+                             </div>
+                             <div className="flex gap-2 mt-6">
+                                <button 
+                                  onClick={() => handleUpdatePartnerStatus(p.id, 'APPROVED')}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                >
+                                  Authorize
+                                </button>
+                                <button 
+                                  onClick={() => handleUpdatePartnerStatus(p.id, 'REJECTED')}
+                                  className="flex-1 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-400 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                >
+                                  Decline
+                                </button>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
+                    <BarChart3 className="text-blue-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
+                    <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Gross Volume</h3>
+                    <p className="text-4xl font-bebas text-slate-900">{formatPrice(totalAdminStats.revenue)}</p>
+                    <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Platform-wide Revenue</p>
+                  </div>
+                  <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
+                    <DollarSign className="text-green-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
+                    <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Network Fees</h3>
+                    <p className="text-4xl font-bebas text-slate-900">{formatPrice(totalAdminStats.partnerFees)}</p>
+                    <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Monthly SaaS Revenue</p>
+                  </div>
+                  <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
+                    <Users className="text-purple-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
+                    <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Active Partners</h3>
+                    <p className="text-4xl font-bebas text-slate-900">{totalAdminStats.activePartners}</p>
+                    <p className="text-[10px] text-amber-500 font-black mt-4 uppercase tracking-[0.2em]">{totalAdminStats.pendingPartners} Applications Pending</p>
+                  </div>
+                  <div className="bg-white p-10 rounded-[3rem] border border-slate-50 shadow-sm transition-all hover:shadow-xl group">
+                    <Package className="text-amber-500 mb-6 group-hover:scale-110 transition-transform" size={40} />
+                    <h3 className="font-black text-slate-900 mb-1 uppercase tracking-tighter">Global SKUs</h3>
+                    <p className="text-4xl font-bebas text-slate-900">{totalAdminStats.totalSKUs}</p>
+                    <p className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-[0.2em]">Live Catalogue Items</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -703,6 +799,28 @@ const App: React.FC = () => {
                           </td>
                           <td className="p-8 text-right">
                              <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = 'image/*';
+                                  input.onchange = (e: any) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        handleUpdateProduct({ ...p, image: reader.result as string });
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  };
+                                  input.click();
+                                }}
+                                className="p-4 bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-100 transition-colors shadow-sm" 
+                                title="Edit Image"
+                              >
+                                <ImageIcon size={20} />
+                              </button>
                               <button onClick={() => handleCloneProduct(p)} className="p-4 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-colors shadow-sm" title="Clone SKU"><Copy size={20} /></button>
                               <button onClick={() => setEditingProduct(p)} className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-colors shadow-sm" title="Edit SKU"><Edit3 size={20} /></button>
                               <button onClick={() => handleDeleteProduct(p.id)} className="p-4 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors shadow-sm" title="Delete SKU"><Trash2 size={20} /></button>
@@ -888,6 +1006,7 @@ const App: React.FC = () => {
         isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} 
         onUpdateQuantity={updateCartQuantity} onRemoveItem={removeFromCart} onCheckout={handleCheckout} 
         formatPrice={formatPrice} discountPercentage={orders.length > 0 ? 0.05 : 0} 
+        addNotification={addNotification}
       />
 
       <AIConsultant isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
@@ -911,7 +1030,7 @@ const App: React.FC = () => {
       {/* Bulk Price Adjustment Modal */}
       {showBulkPriceModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setShowBulkPriceModal(false)} />
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => { setShowBulkPriceModal(false); setBulkAdjustmentPct(0); }} />
           <div className="relative w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in duration-300">
             <h3 className="text-3xl font-bebas text-slate-900 mb-6 uppercase">Bulk Price <span className="text-amber-500">Adjustment</span></h3>
             <p className="text-sm text-slate-500 mb-8 font-medium">Shift all catalogue prices based on market volatility. Use positive values for increases and negative for discounts.</p>
@@ -940,7 +1059,7 @@ const App: React.FC = () => {
               </div>
 
               <div className="flex gap-4">
-                <button onClick={() => setShowBulkPriceModal(false)} className="flex-1 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 bg-slate-50 hover:bg-slate-100 transition-all">Cancel</button>
+                <button onClick={() => { setShowBulkPriceModal(false); setBulkAdjustmentPct(0); }} className="flex-1 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 bg-slate-50 hover:bg-slate-100 transition-all">Cancel</button>
                 <button 
                   onClick={handleApplyBulkPrice}
                   className="flex-[2] bg-slate-900 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-900/10 hover:bg-slate-800 transition-all"
@@ -1031,7 +1150,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => setEditingPartner({...editingPartner, status: editingPartner.status === 'APPROVED' ? 'REJECTED' : 'APPROVED'})}
                   className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    editingPartner.status === 'APPROVED' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                    editingPartner.status === 'APPROVED' ? 'bg-red-50 text-white' : 'bg-green-500 text-white'
                   }`}
                 >
                   {editingPartner.status === 'APPROVED' ? 'Suspend Node' : 'Authorize Node'}
@@ -1055,65 +1174,120 @@ const App: React.FC = () => {
       {editingProduct && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-8">
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => { stopCamera(); setEditingProduct(null); }} />
-          <div className="relative w-full max-w-4xl bg-white rounded-[3rem] p-10 sm:p-16 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-5xl bg-white rounded-[3rem] p-10 sm:p-16 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-12">
               <h3 className="text-4xl font-bebas text-slate-900 uppercase tracking-wide">{editingProduct.id ? 'UPDATE' : 'PROVISION'} <span className="text-amber-500">CATALOGUE UNIT</span></h3>
               <button onClick={() => { stopCamera(); setEditingProduct(null); }} className="p-3 hover:bg-slate-100 rounded-full transition-colors"><X size={28} /></button>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Visual Asset</label>
-                <div className="w-full aspect-square bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group">
-                  {isCameraActive ? (
-                    <div className="w-full h-full relative">
-                      <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4">
-                        <button onClick={takeSnapshot} className="bg-amber-500 text-slate-900 p-5 rounded-full shadow-2xl hover:scale-110 transition-transform"><Camera size={32} /></button>
-                        <button onClick={stopCamera} className="bg-red-500 text-white p-5 rounded-full shadow-2xl hover:scale-110 transition-transform"><X size={32} /></button>
-                      </div>
-                    </div>
-                  ) : editingProduct.image ? (
-                    <>
-                      <img src={editingProduct.image} className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : 'opacity-100'}`} alt="Preview" />
-                      {isUploading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
-                          <Loader2 className="animate-spin text-amber-500" size={48} />
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Visual Asset & AI Lab</label>
+                  <div className="w-full aspect-square bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group">
+                    {isCameraActive ? (
+                      <div className="w-full h-full relative">
+                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-4">
+                          <button onClick={takeSnapshot} className="bg-amber-500 text-slate-900 p-5 rounded-full shadow-2xl hover:scale-110 transition-transform"><Camera size={32} /></button>
+                          <button onClick={stopCamera} className="bg-red-500 text-white p-5 rounded-full shadow-2xl hover:scale-110 transition-transform"><X size={32} /></button>
                         </div>
-                      )}
-                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 p-8">
-                           <button onClick={() => fileInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Upload size={24} className="text-white" /><span className="text-[9px] font-black text-white uppercase">Replace File</span></button>
-                           <button onClick={startCamera} className="bg-amber-500 hover:bg-amber-400 px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Camera size={24} className="text-slate-900" /><span className="text-[9px] font-black text-slate-900 uppercase">Live Capture</span></button>
                       </div>
-                      <button 
-                        onClick={() => setEditingProduct({...editingProduct, image: ''})}
-                        className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-colors"
-                        title="Clear Image"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-6">
-                      <ImageIcon size={64} className="text-slate-200" />
-                      <div className="flex gap-4">
-                         <button onClick={() => fileInputRef.current?.click()} className="bg-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl border border-slate-100 hover:bg-slate-50 flex items-center gap-2 transition-all"><Upload size={16} /> Load Image</button>
-                         <button onClick={startCamera} className="bg-amber-500 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl border border-amber-400 hover:bg-amber-400 flex items-center gap-2 transition-all"><Camera size={16} /> Open Camera</button>
+                    ) : editingProduct.image ? (
+                      <>
+                        <img src={editingProduct.image} className={`w-full h-full object-cover transition-opacity ${isUploading || isAiProcessing ? 'opacity-40' : 'opacity-100'}`} alt="Preview" />
+                        {(isUploading || isAiProcessing) && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/20 backdrop-blur-sm gap-4">
+                            <Loader2 className="animate-spin text-amber-500" size={48} />
+                            <p className="text-[10px] font-black uppercase text-amber-600 tracking-widest">{isAiProcessing ? 'Gemini is reimagining...' : 'Uploading...'}</p>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 p-8">
+                             <button onClick={() => fileInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Upload size={24} className="text-white" /><span className="text-[9px] font-black text-white uppercase">Replace File</span></button>
+                             <button onClick={startCamera} className="bg-amber-500 hover:bg-amber-400 px-6 py-4 rounded-3xl flex flex-col items-center gap-2 flex-1"><Camera size={24} className="text-slate-900" /><span className="text-[9px] font-black text-white uppercase">Live Capture</span></button>
+                        </div>
+                        <button 
+                          onClick={() => setEditingProduct({...editingProduct, image: ''})}
+                          className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-colors"
+                          title="Clear Image"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-6">
+                        <ImageIcon size={64} className="text-slate-200" />
+                        <div className="flex gap-4">
+                           <button onClick={() => fileInputRef.current?.click()} className="bg-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl border border-slate-100 hover:bg-slate-50 flex items-center gap-2 transition-all"><Upload size={16} /> Load Image</button>
+                           <button onClick={startCamera} className="bg-amber-500 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl border border-amber-400 hover:bg-amber-400 flex items-center gap-2 transition-all"><Camera size={16} /> Open Camera</button>
+                        </div>
                       </div>
+                    )}
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+
+                  {/* AI Refine Component */}
+                  {editingProduct.image && (
+                    <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-white/5 space-y-4 animate-in slide-in-from-bottom-4">
+                       <div className="flex items-center gap-3 mb-2">
+                          <div className="bg-amber-500 p-1.5 rounded-lg">
+                            <Wand2 size={16} className="text-slate-900" />
+                          </div>
+                          <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Gemini 2.5 Visual Lab</h4>
+                       </div>
+                       <div className="relative group">
+                          <textarea 
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            placeholder="e.g. 'Add a retro film filter' or 'Make it look like it's on a construction site'..."
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none h-24 placeholder:text-slate-500"
+                            disabled={isAiProcessing}
+                          />
+                          <button 
+                            onClick={handleAiRefine}
+                            disabled={!aiPrompt.trim() || isAiProcessing}
+                            className="absolute bottom-3 right-3 bg-amber-500 text-slate-900 p-2.5 rounded-xl hover:bg-amber-400 transition-all shadow-xl disabled:opacity-30 disabled:grayscale"
+                          >
+                            {isAiProcessing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                          </button>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => setAiPrompt("Add a vintage film look")} className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md hover:bg-white/10">Retro Filter</button>
+                          <button onClick={() => setAiPrompt("Increase brightness and clarity")} className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md hover:bg-white/10">Brighten</button>
+                          <button onClick={() => setAiPrompt("Place it on a wooden construction pallet")} className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md hover:bg-white/10">Scene Swap</button>
+                          {aiHistory.length > 0 && (
+                            <button 
+                              onClick={() => setEditingProduct({ ...editingProduct, image: aiHistory[0] })}
+                              className="ml-auto text-[8px] font-black text-amber-500 uppercase tracking-tighter flex items-center gap-1"
+                            >
+                              <RotateCcw size={10} /> Undo AI
+                            </button>
+                          )}
+                       </div>
                     </div>
                   )}
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-                  <canvas ref={canvasRef} className="hidden" />
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CDN Asset Link</label>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">CDN Asset Link / Filename</label>
+                    <button 
+                      onClick={handleGitHubAssetSync}
+                      className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 hover:text-amber-600 transition-colors uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg"
+                      title="Link to GitHub image folder"
+                    >
+                      <Github size={10} /> Sync to GitHub Folder
+                    </button>
+                  </div>
                   <input 
                     type="text" 
                     value={editingProduct.image} 
                     onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 text-xs text-slate-400 font-bold" 
-                    placeholder="Direct image URL..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/10 text-xs text-slate-500 font-bold" 
+                    placeholder="Enter filename.jpg or full URL..."
                   />
+                  <p className="text-[8px] text-slate-400 uppercase font-black tracking-widest ml-1">Tip: Type filename and click 'Sync' to auto-prepend GitHub path.</p>
                 </div>
               </div>
 

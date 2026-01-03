@@ -1,5 +1,7 @@
-
 import { Product, Review, Order, Partner } from './types';
+
+// Base URL for GitHub hosted assets - Updated to user's repository
+export const GITHUB_ASSET_BASE = 'https://raw.githubusercontent.com/vafortor/Modegah-/main/Images/';
 
 export const PRODUCTS: Product[] = [
   {
@@ -9,7 +11,7 @@ export const PRODUCTS: Product[] = [
     price: 12.50,
     factoryName: 'Modegah Shai Hills',
     description: 'Precision-vibrated 6-inch hollow block. Features dual cores for thermal efficiency and electrical conduit routing. Standard for residential load-bearing walls.',
-    image: 'https://images.unsplash.com/photo-1517646288273-96b9624b7ecd?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}6_Hollow%20Sandcrete%20Block.png`,
     averageRating: 4.8,
     reviewCount: 24,
     specifications: {
@@ -28,7 +30,7 @@ export const PRODUCTS: Product[] = [
     price: 18.50,
     factoryName: 'Modegah Shai Hills',
     description: 'Structural grade 8-inch hollow block designed for multi-story builds and heavy industrial boundary walls. High-density concrete mix.',
-    image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}8_Hollow%20Sandcrete%20Block.png`,
     averageRating: 4.9,
     reviewCount: 18,
     specifications: {
@@ -47,7 +49,7 @@ export const PRODUCTS: Product[] = [
     price: 15.20,
     factoryName: 'Elite Concrete Partners',
     description: 'Solid high-strength block for basement foundations and wet-area walls. Highly resistant to ground pressure and water penetration.',
-    image: 'https://images.unsplash.com/photo-1590059393164-8846c4f5263a?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}5_Solid%20Foundation%20Block.png`,
     averageRating: 4.7,
     reviewCount: 12,
     specifications: {
@@ -66,7 +68,7 @@ export const PRODUCTS: Product[] = [
     price: 4.50,
     factoryName: 'West Hills Masonry',
     description: 'Heavy-duty I-shaped pavers. Interlocking geometry provides exceptional vertical and horizontal locking for driveways.',
-    image: 'https://images.unsplash.com/photo-1536633100069-07f0653f86f6?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}Standard%20I-Shape%20Paving%20Stone.png`,
     averageRating: 4.6,
     reviewCount: 35,
     specifications: {
@@ -76,7 +78,7 @@ export const PRODUCTS: Product[] = [
     },
     isActive: true,
     isFeatured: false,
-    displayOrder: 4
+    displayOrder: 5
   },
   {
     id: '5',
@@ -85,7 +87,7 @@ export const PRODUCTS: Product[] = [
     price: 24.00,
     factoryName: 'Modegah Shai Hills',
     description: 'Architectural decorative block with Fleur-de-Lis motif. Ideal for compound walls, ventilation, and decorative balconies.',
-    image: 'https://images.unsplash.com/photo-1628744448839-3829033324f2?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}Fleur-De_Lis%20Decorative%20Block.png`,
     averageRating: 5.0,
     reviewCount: 8,
     specifications: {
@@ -95,7 +97,7 @@ export const PRODUCTS: Product[] = [
     },
     isActive: true,
     isFeatured: false,
-    displayOrder: 5
+    displayOrder: 7
   },
   {
     id: '6',
@@ -104,7 +106,7 @@ export const PRODUCTS: Product[] = [
     price: 26.50,
     factoryName: 'Modegah Shai Hills',
     description: 'U-shaped concrete block for creating reinforced concrete lintels and bond beams without the need for timber formwork.',
-    image: 'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}6_Lintel%20U-Block.png`,
     averageRating: 4.8,
     reviewCount: 15,
     specifications: {
@@ -114,7 +116,7 @@ export const PRODUCTS: Product[] = [
     },
     isActive: true,
     isFeatured: false,
-    displayOrder: 6
+    displayOrder: 8
   },
   {
     id: '7',
@@ -123,7 +125,7 @@ export const PRODUCTS: Product[] = [
     price: 5.80,
     factoryName: 'Elite Concrete Partners',
     description: 'Dual-tone or mono-color zig-zag interlocking pavers. Perfect for large parking areas and commercial walkways.',
-    image: 'https://images.unsplash.com/photo-1544911845-1f34a3ea3db3?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}Zig-Zag%20Interlocking%20Paver.png`,
     averageRating: 4.9,
     reviewCount: 22,
     specifications: {
@@ -133,7 +135,7 @@ export const PRODUCTS: Product[] = [
     },
     isActive: true,
     isFeatured: false,
-    displayOrder: 7
+    displayOrder: 9
   },
   {
     id: 'c1',
@@ -142,7 +144,7 @@ export const PRODUCTS: Product[] = [
     price: 105.00,
     factoryName: 'Ghacem Ltd (Accra)',
     description: 'Premium high-grade cement for structural concrete, lintels, and site-mixed blocks.',
-    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=1200',
+    image: `${GITHUB_ASSET_BASE}Ghacem%20Cement%20Super%20Strong.png`,
     averageRating: 4.9,
     reviewCount: 120,
     specifications: {
@@ -152,7 +154,7 @@ export const PRODUCTS: Product[] = [
     },
     isActive: true,
     isFeatured: true,
-    displayOrder: 8
+    displayOrder: 10
   }
 ];
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Minus, Plus, ShoppingBag, Trash2, Truck, AlertCircle, CheckCircle2, MapPin, Award, ArrowLeft, ShoppingCart, Info, TrendingDown, Star } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Trash2, Truck, AlertCircle, CheckCircle2, MapPin, Award, ArrowLeft, ShoppingCart, Info, TrendingDown, Star, Key, ShieldCheck, Loader2 } from 'lucide-react';
 import { CartItem } from '../types';
 import { PRODUCTS } from '../constants';
 
@@ -13,11 +13,17 @@ interface CartProps {
   onCheckout: () => void;
   formatPrice: (price: number) => string;
   discountPercentage: number;
+  addNotification?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
 }
 
-const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout, formatPrice, discountPercentage }) => {
+const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout, formatPrice, discountPercentage, addNotification }) => {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const [policyAcknowledged, setPolicyAcknowledged] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [verificationError, setVerificationError] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
@@ -35,7 +41,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
   useEffect(() => {
     if (!isOpen) {
       setShowConfirm(false);
+      setShowVerification(false);
       setPolicyAcknowledged(false);
+      setVerificationCode('');
+      setGeneratedCode('');
+      setVerificationError(false);
     }
   }, [isOpen]);
 
@@ -47,10 +57,40 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
     }
   };
 
+  const generateCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'TXN-';
+    for (let i = 0; i < 9; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
   const handleFinalConfirm = () => {
-    onCheckout();
+    const code = generateCode();
+    setGeneratedCode(code);
+    setShowVerification(true);
     setShowConfirm(false);
-    setPolicyAcknowledged(false);
+    
+    if (addNotification) {
+      addNotification('info', 'Security Code Sent', `Enter ${code} to authorize your structural material order.`);
+    }
+  };
+
+  const handleVerifyAndCheckout = () => {
+    if (verificationCode.trim().toUpperCase() === generatedCode) {
+      setIsVerifying(true);
+      setVerificationError(false);
+      setTimeout(() => {
+        onCheckout();
+        setIsVerifying(false);
+        setShowVerification(false);
+        setPolicyAcknowledged(false);
+      }, 1500);
+    } else {
+      setVerificationError(true);
+      setTimeout(() => setVerificationError(false), 2000);
+    }
   };
 
   const handleQuantityInputChange = (id: string, value: string) => {
@@ -109,7 +149,6 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                 </button>
               </div>
 
-              {/* Enhanced Empty State: Best Sellers */}
               <div className="space-y-6 pt-12 border-t border-slate-50">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                   <Star size={14} className="text-amber-500" /> Top Rated Units
@@ -124,12 +163,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                         <p className="text-xs font-black text-slate-900 truncate">{p.name}</p>
                         <p className="text-[10px] text-amber-600 font-bold mt-0.5">{formatPrice(p.price)}</p>
                         <button 
-                          onClick={() => {
-                            onUpdateQuantity(p.id, 1);
-                            // Normally we'd need an onAddToCart here, but onUpdateQuantity with current ID is a proxy for this context if item exists, 
-                            // however for empty state we'd likely want a proper add call. 
-                            // For simplicity in this UI block, we assume this button takes them back to the shop or we trigger a global add.
-                          }}
+                          onClick={onClose}
                           className="text-[9px] font-black uppercase text-slate-400 hover:text-slate-900 mt-2 flex items-center gap-1"
                         >
                           View in Catalogue <Plus size={10} />
@@ -142,7 +176,6 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
             </div>
           ) : (
             <div className="p-6 space-y-8">
-              {/* Persistent Delivery Alert Banner */}
               <div className="p-5 bg-amber-50 border border-amber-200 rounded-[1.5rem] flex items-start gap-4 shadow-sm">
                 <MapPin className="text-amber-600 shrink-0 mt-0.5" size={24} />
                 <div>
@@ -211,8 +244,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                           <button 
                             onClick={() => onUpdateQuantity(item.id, -1)}
                             className="p-1.5 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 transition-all"
-                            disabled={showConfirm}
-                            title="Decrease quantity"
+                            disabled={showConfirm || showVerification}
                           >
                             <Minus size={14} className="text-slate-600" />
                           </button>
@@ -221,14 +253,13 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                             min="1"
                             value={item.quantity}
                             onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                            disabled={showConfirm}
+                            disabled={showConfirm || showVerification}
                             className="w-12 text-center bg-transparent border-none focus:ring-0 text-sm font-black text-slate-900"
                           />
                           <button 
                             onClick={() => onUpdateQuantity(item.id, 1)}
                             className="p-1.5 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 transition-all"
-                            disabled={showConfirm}
-                            title="Increase quantity"
+                            disabled={showConfirm || showVerification}
                           >
                             <Plus size={14} className="text-slate-600" />
                           </button>
@@ -239,7 +270,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
                           <button 
                             onClick={() => onRemoveItem(item.id)}
                             className="flex items-center gap-1 text-[9px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest transition-colors"
-                            disabled={showConfirm}
+                            disabled={showConfirm || showVerification}
                           >
                             <Trash2 size={10} /> Remove
                           </button>
@@ -255,39 +286,41 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
 
         {items.length > 0 && (
           <div className="p-8 border-t bg-slate-50 space-y-6">
-            <div className={`p-5 rounded-[1.5rem] border-2 transition-all ${policyAcknowledged ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200 shadow-sm'}`}>
-              <div className="flex gap-4 items-start mb-4">
-                <Truck size={24} className={policyAcknowledged ? 'text-green-600' : 'text-amber-600'} />
-                <div>
-                  <h4 className={`text-xs font-black uppercase tracking-widest ${policyAcknowledged ? 'text-green-800' : 'text-amber-900'}`}>GT. ACCRA Logistics</h4>
-                  <p className={`text-[10px] mt-1 leading-relaxed font-bold ${policyAcknowledged ? 'text-green-700' : 'text-amber-800'}`}>
-                    Delivery is exclusive to sites within the Greater Accra Region.
-                  </p>
-                </div>
-              </div>
-              
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only"
-                    checked={policyAcknowledged}
-                    onChange={(e) => setPolicyAcknowledged(e.target.checked)}
-                    disabled={showConfirm}
-                  />
-                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                    policyAcknowledged 
-                      ? 'bg-green-600 border-green-600' 
-                      : 'bg-white border-amber-300 group-hover:border-amber-500'
-                  }`}>
-                    {policyAcknowledged && <CheckCircle2 size={12} className="text-white" />}
+            {!showVerification && (
+               <div className={`p-5 rounded-[1.5rem] border-2 transition-all ${policyAcknowledged ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200 shadow-sm'}`}>
+                <div className="flex gap-4 items-start mb-4">
+                  <Truck size={24} className={policyAcknowledged ? 'text-green-600' : 'text-amber-600'} />
+                  <div>
+                    <h4 className={`text-xs font-black uppercase tracking-widest ${policyAcknowledged ? 'text-green-800' : 'text-amber-900'}`}>GT. ACCRA Logistics</h4>
+                    <p className={`text-[10px] mt-1 leading-relaxed font-bold ${policyAcknowledged ? 'text-green-700' : 'text-amber-800'}`}>
+                      Delivery is exclusive to sites within the Greater Accra Region.
+                    </p>
                   </div>
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${policyAcknowledged ? 'text-green-700' : 'text-slate-500 group-hover:text-slate-900'}`}>
-                  Confirm Site Location
-                </span>
-              </label>
-            </div>
+                
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only"
+                      checked={policyAcknowledged}
+                      onChange={(e) => setPolicyAcknowledged(e.target.checked)}
+                      disabled={showConfirm}
+                    />
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                      policyAcknowledged 
+                        ? 'bg-green-600 border-green-600' 
+                        : 'bg-white border-amber-300 group-hover:border-amber-500'
+                    }`}>
+                      {policyAcknowledged && <CheckCircle2 size={12} className="text-white" />}
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${policyAcknowledged ? 'text-green-700' : 'text-slate-500 group-hover:text-slate-900'}`}>
+                    Confirm Site Location
+                  </span>
+                </label>
+              </div>
+            )}
             
             <div className="space-y-3">
               <div className="flex justify-between items-center text-xs">
@@ -306,7 +339,67 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
               </div>
             </div>
 
-            {!showConfirm ? (
+            {showVerification ? (
+              <div className="bg-slate-900 p-8 rounded-[2rem] border border-white/10 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-4 text-amber-500">
+                  <div className="bg-amber-500/10 p-3 rounded-2xl">
+                    <Key size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white">Payment Verification</h4>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Mobile Security Layer</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                  Enter the reference text (e.g. <span className="text-amber-500 font-black">{generatedCode}</span>) sent to your mobile device to authorize this transaction.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+                      placeholder="TXN-XXXXXXXXX"
+                      disabled={isVerifying}
+                      className={`w-full bg-white/5 border px-6 py-5 rounded-2xl text-white font-black tracking-widest outline-none focus:ring-4 focus:ring-amber-500/20 transition-all ${
+                        verificationError ? 'border-red-500 animate-shake' : 'border-white/10'
+                      }`}
+                    />
+                    {verificationError && (
+                      <p className="absolute -bottom-6 left-0 text-[9px] font-black text-red-500 uppercase tracking-widest">Code mismatch. Please try again.</p>
+                    )}
+                  </div>
+
+                  <button 
+                    onClick={handleVerifyAndCheckout}
+                    disabled={isVerifying || verificationCode.length < 4}
+                    className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-5 rounded-2xl transition-all shadow-xl shadow-amber-500/20 active:scale-[0.98] uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-3"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Validating Node...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck size={18} />
+                        Confirm Payment
+                      </>
+                    )}
+                  </button>
+
+                  <button 
+                    onClick={() => setShowVerification(false)}
+                    disabled={isVerifying}
+                    className="w-full text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors py-2"
+                  >
+                    Cancel Transaction
+                  </button>
+                </div>
+              </div>
+            ) : !showConfirm ? (
               <div className="grid grid-cols-1 gap-4 pt-2">
                 <button 
                   onClick={handleCheckoutClick}
@@ -356,6 +449,16 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, items, onUpdateQuantity, o
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

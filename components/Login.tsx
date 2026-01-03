@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, User, ArrowRight, Loader2, AlertCircle, ShieldCheck, Phone, UserPlus, LogIn, CheckCircle2, Factory, Briefcase, ShieldAlert, Zap, Key, Shield } from 'lucide-react';
-import { UserRole, View } from '../types';
+import { UserRole, View, UserProfile } from '../types';
 import BlockIcon from './BlockIcon';
 
 interface LoginProps {
-  onLogin: (role: UserRole) => void;
+  onLogin: (role: UserRole, profile?: UserProfile) => void;
   setView: (view: View) => void;
 }
 
@@ -16,6 +16,13 @@ const BACKGROUNDS: Record<UserRole, string> = {
   PARTNER: "https://images.unsplash.com/photo-1590487988256-9ed24133863e?auto=format&fit=crop&q=80&w=2000",
   ADMIN: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000"
 };
+
+interface StoredAccount {
+  username: string;
+  password: string;
+  role: UserRole;
+  profile: UserProfile;
+}
 
 const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [activeTab, setActiveTab] = useState<UserRole>('CLIENT');
@@ -31,18 +38,37 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
   const [phone, setPhone] = useState('');
   const [adminToken, setAdminToken] = useState('');
 
+  // Local Storage Logic
+  const getStoredAccounts = (): StoredAccount[] => {
+    const data = localStorage.getItem('modegah_accounts');
+    return data ? JSON.parse(data) : [];
+  };
+
+  const saveAccount = (account: StoredAccount) => {
+    const accounts = getStoredAccounts();
+    accounts.push(account);
+    localStorage.setItem('modegah_accounts', JSON.stringify(accounts));
+  };
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     setTimeout(() => {
-      const genericError = "Invalid credentials";
+      const accounts = getStoredAccounts();
       const lowerUser = username.toLowerCase();
 
       if (isSignUp) {
         if (!fullName || !phone || !username || !password) {
           setError('Please fill in all required fields.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check for duplicates
+        if (accounts.some(acc => acc.username.toLowerCase() === lowerUser)) {
+          setError('Username already exists in the network.');
           setIsLoading(false);
           return;
         }
@@ -60,28 +86,41 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
           }
         }
 
+        const newProfile: UserProfile = {
+          fullName,
+          phone,
+          email: `${lowerUser}@modegah.com`,
+          deliveryAddress: activeTab === 'CLIENT' ? 'Enter site address in settings' : 'Factory Registered Hub',
+          businessName: activeTab === 'PARTNER' ? fullName : ''
+        };
+
+        const newAccount: StoredAccount = {
+          username: lowerUser,
+          password,
+          role: activeTab,
+          profile: newProfile
+        };
+
+        saveAccount(newAccount);
         setIsSuccess(true);
-        setTimeout(() => onLogin(activeTab), 1500);
+        setTimeout(() => onLogin(activeTab, newProfile), 1500);
       } else {
-        if (activeTab === 'ADMIN') {
-          if (lowerUser === 'admin' && password === 'modegah_admin') {
-            onLogin('ADMIN');
-          } else {
-            setError(genericError);
-            setIsLoading(false);
-          }
-        } else if (activeTab === 'PARTNER') {
-          if (lowerUser === 'partner' && password === 'modegah_partner') {
-            onLogin('PARTNER');
-          } else {
-            setError(genericError);
-            setIsLoading(false);
-          }
+        // Authenticate
+        const match = accounts.find(acc => acc.username.toLowerCase() === lowerUser && acc.password === password);
+        
+        if (match) {
+          onLogin(match.role, match.profile);
         } else {
-          if (lowerUser === 'client' && password === 'modegah_client') {
+          // Hardcoded Demos as Fallback
+          if (activeTab === 'ADMIN' && lowerUser === 'admin' && password === 'modegah_admin') {
+            onLogin('ADMIN');
+          } else if (activeTab === 'PARTNER' && lowerUser === 'partner' && password === 'modegah_partner') {
+            onLogin('PARTNER');
+          } else if (activeTab === 'CLIENT' && lowerUser === 'client' && password === 'modegah_client') {
             onLogin('CLIENT');
           } else {
-            onLogin('CLIENT');
+            setError('Invalid credentials. Check identification and try again.');
+            setIsLoading(false);
           }
         }
       }
@@ -170,7 +209,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, setView }) => {
                 </h2>
                 
                 <button 
-                  onClick={() => setIsSignUp(!isSignUp)}
+                  onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
                   className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${
                     isSignUp ? 'text-slate-400 border-white/10 hover:text-white' : 'text-amber-500 border-amber-500/20 bg-amber-500/5'
                   }`}

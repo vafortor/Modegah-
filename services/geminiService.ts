@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from "../types";
 
@@ -6,7 +5,6 @@ const SYSTEM_INSTRUCTION = `You are the Modegah AI Assistant, an expert in const
 
 Our standard block sizing uses a 400mm x 200mm face.
 Product Range:
-- 4" Block (400x100x200mm): Partition walls, non-load bearing.
 - 5" Block (400x125x200mm): Standard residential external walls.
 - 6" Block (400x150x200mm): Most common load-bearing structural block.
 - 8" Block (400x200x200mm): Heavy structural loads, multi-story buildings.
